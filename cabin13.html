@@ -1,0 +1,2614 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CABIN 13</title>
+<style>
+/* ============================================================
+   CABIN 13 — palette / base
+   ============================================================ */
+:root{
+  --bg:#0a0a0a; --bg2:#1a0000; --bg3:#120404;
+  --red:#8b0000; --red2:#b30000; --red3:#5c0000;
+  --bone:#cfc6b8; --ink:#94897a; --dim:#5d564c;
+  --violet:#2a0d2b;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --grunge:"Copperplate","Big Caslon","Bodoni MT",Didot,"Playfair Display",Georgia,serif;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,"DejaVu Sans Mono",monospace;
+  --noise:0.06;      /* VHS static intensity, driven by JS */
+  --pulse:6s;        /* candle flicker speed */
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg); color:var(--bone);
+  font-family:var(--serif); font-size:17px; line-height:1.62;
+  overflow:hidden; -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.layer{position:fixed;inset:0;pointer-events:none}
+
+/* ---------- ambient light: candle / hearth ---------- */
+#ambient{
+  background:
+    radial-gradient(58% 46% at 50% 38%, rgba(150,44,18,.20), transparent 70%),
+    radial-gradient(24% 20% at 14% 74%, rgba(196,88,26,.16), transparent 72%),
+    radial-gradient(22% 18% at 87% 22%, rgba(120,30,10,.14), transparent 72%),
+    linear-gradient(180deg,#0a0a0a 0%,#120404 55%,#1a0000 100%);
+  animation:flicker var(--pulse) steps(1,end) infinite;
+}
+@keyframes flicker{
+  0%,100%{opacity:.95;filter:brightness(1)}
+  7%{opacity:.78;filter:brightness(.86)}
+  11%{opacity:1;filter:brightness(1.1)}
+  19%{opacity:.86}
+  27%{opacity:1;filter:brightness(1.04)}
+  33%{opacity:.7;filter:brightness(.8)}
+  36%{opacity:.99}
+  52%{opacity:.9}
+  61%{opacity:1;filter:brightness(1.12)}
+  67%{opacity:.82}
+  78%{opacity:.97}
+  86%{opacity:.74;filter:brightness(.84)}
+  91%{opacity:1}
+}
+/* a second, faster light for candle "breath" */
+#ambient2{
+  background:radial-gradient(30% 24% at 50% 30%, rgba(255,120,40,.10), transparent 70%);
+  animation:flicker 1.7s steps(1,end) infinite reverse; mix-blend-mode:screen;
+}
+
+/* ---------- VHS static + scanlines + vignette ---------- */
+#static{width:100%;height:100%;image-rendering:pixelated;opacity:var(--noise);mix-blend-mode:screen}
+#scanlines{
+  background:repeating-linear-gradient(180deg,rgba(0,0,0,.32) 0 1px,rgba(0,0,0,0) 1px 3px);
+  opacity:.55; mix-blend-mode:multiply;
+}
+#tracking{
+  background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,.045) 48%,rgba(255,60,20,.05) 52%,transparent 100%);
+  height:16vh; top:-20vh; mix-blend-mode:screen; opacity:calc(var(--noise) * 3);
+  animation:trackroll 7.5s linear infinite;
+}
+@keyframes trackroll{from{transform:translateY(0)}to{transform:translateY(140vh)}}
+#vignette{
+  background:radial-gradient(120% 92% at 50% 46%, transparent 34%, rgba(0,0,0,.55) 68%, rgba(0,0,0,.94) 100%);
+  box-shadow:inset 0 0 22vmin 8vmin #000;
+}
+
+/* ---------- reaction overlays ---------- */
+#flash{background:radial-gradient(circle at 50% 50%,rgba(200,0,0,.62),rgba(90,0,0,.9));opacity:0}
+#flash.on{animation:redflash 380ms ease-out}
+@keyframes redflash{0%{opacity:0}12%{opacity:.85}100%{opacity:0}}
+
+#invert{background:#fff;opacity:0;mix-blend-mode:difference}
+#invert.on{animation:invflick 700ms steps(1,end)}
+@keyframes invflick{0%,100%{opacity:0}8%{opacity:1}16%{opacity:0}30%{opacity:1}38%{opacity:0}56%{opacity:1}64%{opacity:0}82%{opacity:.6}}
+
+#scare{display:grid;place-items:center;opacity:0;background:#000}
+#scare.on{animation:scarepop 520ms steps(1,end)}
+#scare svg{width:min(78vmin,780px);height:auto;filter:contrast(2.4) brightness(1.3)}
+@keyframes scarepop{
+  0%{opacity:0}4%{opacity:1;transform:scale(1.02)}10%{opacity:0}
+  14%{opacity:1;transform:scale(1.09) rotate(-1.2deg)}26%{opacity:1;transform:scale(1.14)}
+  34%{opacity:0}40%{opacity:1;transform:scale(1.06) rotate(.9deg)}62%{opacity:1}
+  70%{opacity:0}100%{opacity:0}
+}
+
+/* ---------- blood drip transition ---------- */
+#drip{transform:translateY(-118%);will-change:transform}
+#drip svg{width:100%;height:100%;display:block}
+#drip.fall{animation:dripfall 400ms cubic-bezier(.5,.05,.75,.55) forwards}
+#drip.rise{animation:driprise 420ms cubic-bezier(.3,.5,.4,1) forwards}
+@keyframes dripfall{from{transform:translateY(-118%)}to{transform:translateY(0)}}
+@keyframes driprise{from{transform:translateY(0)}to{transform:translateY(116%)}}
+
+/* ---------- stage / scene ---------- */
+#stage{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:clamp(14px,3vh,34px) clamp(14px,4vw,40px);will-change:transform,filter}
+#stage.shake{animation:shake 520ms cubic-bezier(.36,.07,.19,.97) both}
+@keyframes shake{
+  0%,100%{transform:translate3d(0,0,0) rotate(0)}
+  6%{transform:translate3d(-11px,4px,0) rotate(-.7deg)}
+  14%{transform:translate3d(9px,-6px,0) rotate(.6deg)}
+  22%{transform:translate3d(-14px,-3px,0) rotate(.9deg)}
+  32%{transform:translate3d(12px,7px,0) rotate(-.8deg)}
+  44%{transform:translate3d(-8px,-8px,0) rotate(.5deg)}
+  57%{transform:translate3d(7px,3px,0) rotate(-.4deg)}
+  71%{transform:translate3d(-5px,-2px,0) rotate(.3deg)}
+  86%{transform:translate3d(3px,2px,0) rotate(-.15deg)}
+}
+#stage.breathe{animation:breathe 620ms ease-in-out both}
+@keyframes breathe{
+  0%{transform:scale(1);filter:saturate(1)}
+  40%{transform:scale(1.028);filter:saturate(.55) brightness(1.05)}
+  100%{transform:scale(1);filter:saturate(1)}
+}
+#stage.chroma{filter:url(#fChroma)}
+#stage.lurch{animation:lurch 700ms ease-in-out both}
+@keyframes lurch{
+  0%{transform:scale(1) skewX(0)}
+  25%{transform:scale(1.05) skewX(1.6deg)}
+  50%{transform:scale(.97) skewX(-2.2deg)}
+  75%{transform:scale(1.03) skewX(.8deg)}
+  100%{transform:scale(1) skewX(0)}
+}
+
+#scene{width:min(760px,100%);max-height:100%;overflow:auto;scrollbar-width:thin}
+#scene::-webkit-scrollbar{width:6px}
+#scene::-webkit-scrollbar-thumb{background:var(--red3)}
+
+.slug{font-family:var(--mono);font-size:11px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--red2);opacity:.8;margin-bottom:6px}
+h1.title{
+  font-family:var(--grunge);font-weight:400;font-size:clamp(26px,4.4vw,44px);line-height:1.06;
+  letter-spacing:.045em;text-transform:uppercase;margin:0 0 18px;color:#e8ddcd;
+  filter:url(#fRough) drop-shadow(0 0 22px rgba(139,0,0,.5));
+  text-shadow:0 1px 0 #3a0000, 0 0 30px rgba(179,0,0,.35), 1px -1px 0 rgba(0,0,0,.9);
+}
+#prose{margin:0 0 26px;font-size:clamp(16px,1.9vw,19.5px);color:#c8bfb1;
+  text-shadow:0 1px 8px rgba(0,0,0,.9);min-height:6.2em}
+#prose .cursor{display:inline-block;width:.55em;height:1.05em;vertical-align:-.16em;
+  background:var(--red2);animation:blink .75s steps(1,end) infinite}
+@keyframes blink{50%{opacity:0}}
+#prose em{color:#e6d8c4;font-style:italic}
+#prose .q{color:#d9b7a4}
+
+/* ---------- choices ---------- */
+#choices{display:flex;flex-direction:column;gap:10px;opacity:0;transition:opacity .4s ease}
+#choices.in{opacity:1}
+.choice{
+  position:relative;text-align:left;padding:13px 16px 13px 46px;
+  border:1px solid rgba(139,0,0,.42);background:linear-gradient(90deg,rgba(26,0,0,.72),rgba(10,10,10,.42));
+  color:#c9bfb0;font-size:clamp(14.5px,1.65vw,16.5px);line-height:1.4;
+  transition:border-color .18s,color .18s,transform .18s,background .18s;
+}
+.choice .k{position:absolute;left:15px;top:50%;transform:translateY(-50%);
+  font-family:var(--mono);font-size:11px;color:var(--red2);opacity:.75;letter-spacing:.1em}
+.choice:hover,.choice:focus-visible{
+  border-color:var(--red2);color:#f0e6d6;outline:none;transform:translateX(4px);
+  background:linear-gradient(90deg,rgba(90,0,0,.6),rgba(20,0,0,.4));
+  box-shadow:0 0 26px -6px rgba(179,0,0,.55) inset;
+}
+.choice:hover .k,.choice:focus-visible .k{opacity:1}
+.choice[disabled]{opacity:.4;cursor:default;transform:none}
+.tag{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--dim);
+  text-transform:uppercase;margin-left:8px}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;left:0;right:0;top:0;display:flex;gap:18px;align-items:center;
+  padding:9px 14px;font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--dim);background:linear-gradient(180deg,rgba(0,0,0,.8),transparent);
+  z-index:40;flex-wrap:wrap}
+#hud .grp{display:flex;gap:7px;align-items:center;min-height:14px}
+#hud b{color:var(--ink);font-weight:400}
+#sanBar{width:92px;height:5px;background:#1c1310;border:1px solid #3a2a24;position:relative}
+#sanFill{position:absolute;inset:0;right:auto;background:linear-gradient(90deg,#5c0000,#b30000);
+  box-shadow:0 0 10px rgba(179,0,0,.7);transition:width .5s ease}
+.pill{border:1px solid #33251f;padding:1px 6px;color:var(--ink);white-space:nowrap}
+.pill.hollow{border-color:var(--red2);color:#e2b3b3;animation:hollowpulse 1.6s ease-in-out infinite}
+@keyframes hollowpulse{50%{color:#ff6a6a;border-color:#ff2b2b}}
+.pill.dead{color:#4a423a;border-color:#241f1b;text-decoration:line-through}
+.pill.item{border-color:#2c2c22;color:#9d9484}
+#hud .spacer{flex:1}
+#hud button{border:1px solid #33251f;padding:2px 8px;letter-spacing:.14em}
+#hud button:hover{border-color:var(--red2);color:#e8dccb}
+#vol{width:74px;accent-color:#b30000}
+
+/* ---------- whispers ---------- */
+.whisper{position:fixed;font-family:var(--grunge);font-size:clamp(15px,2.4vw,26px);
+  color:rgba(220,180,180,.5);letter-spacing:.2em;text-transform:lowercase;pointer-events:none;
+  z-index:12;filter:url(#fRough) blur(.3px);animation:whisp 2.6s ease-in-out forwards}
+@keyframes whisp{0%{opacity:0;transform:translateY(8px) scale(.98)}
+  22%{opacity:.75}70%{opacity:.4}100%{opacity:0;transform:translateY(-14px) scale(1.04)}}
+
+/* ---------- modals ---------- */
+#modal{position:fixed;inset:0;z-index:60;display:none;place-items:center;
+  background:rgba(4,0,0,.86);backdrop-filter:blur(3px)}
+#modal.on{display:grid}
+.panel{width:min(720px,92vw);max-height:86vh;overflow:auto;border:1px solid var(--red3);
+  background:linear-gradient(160deg,#120303,#0a0a0a);padding:22px clamp(16px,3vw,30px);
+  box-shadow:0 0 70px -10px rgba(139,0,0,.6)}
+.panel h2{font-family:var(--grunge);font-weight:400;text-transform:uppercase;letter-spacing:.14em;
+  font-size:19px;margin:0 0 14px;color:#e8ddcd;filter:url(#fRough)}
+.panel h3{font-family:var(--mono);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--red2);margin:20px 0 8px;border-bottom:1px solid #2a1010;padding-bottom:5px}
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.mini{border:1px solid #33251f;padding:4px 10px;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--ink)}
+.mini:hover{border-color:var(--red2);color:#f0e6d6}
+.mini.on{border-color:var(--red2);color:#ffd9d9;background:rgba(90,0,0,.35)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:5px}
+.jump{border:1px solid #241a16;padding:5px 8px;font-family:var(--mono);font-size:10.5px;
+  color:#8d8474;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jump:hover{border-color:var(--red2);color:#f0e6d6;background:rgba(60,0,0,.4)}
+.jump i{color:var(--red2);font-style:normal;margin-right:6px}
+.note{font-family:var(--mono);font-size:10.5px;color:var(--dim);letter-spacing:.06em;line-height:1.75}
+.ck{display:flex;gap:8px;align-items:center;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink);cursor:pointer}
+
+/* ---------- title screen ---------- */
+#tscreen{position:fixed;inset:0;z-index:50;display:grid;place-items:center;text-align:center;
+  background:radial-gradient(70% 60% at 50% 44%,rgba(40,0,0,.5),#050000 78%)}
+#tscreen.gone{display:none}
+#tscreen .wrap{width:min(640px,90vw)}
+#tscreen h1{font-family:var(--grunge);font-weight:400;font-size:clamp(52px,13vw,132px);
+  margin:0;line-height:.86;letter-spacing:.03em;color:#efe4d3;filter:url(#fRough);
+  text-shadow:0 0 60px rgba(179,0,0,.55),0 3px 0 #2a0000;animation:titlebreath 5s ease-in-out infinite}
+@keyframes titlebreath{50%{text-shadow:0 0 110px rgba(220,0,0,.75),0 3px 0 #2a0000;letter-spacing:.045em}}
+#tscreen .sub{font-family:var(--mono);font-size:11px;letter-spacing:.42em;text-transform:uppercase;
+  color:var(--red2);margin:14px 0 4px}
+#tscreen .cw{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:#4e4640;
+  margin:0 0 30px;line-height:1.8}
+#tscreen .choice{text-align:center;padding:13px 16px}
+#tscreen .choice .k{position:static;transform:none;margin-right:10px}
+
+/* ---------- misc ---------- */
+.ending-badge{font-family:var(--mono);font-size:10px;letter-spacing:.3em;color:#6a5f52;
+  text-transform:uppercase;border:1px solid #2a1010;padding:4px 9px;display:inline-block;margin-bottom:16px}
+#warnbox{position:fixed;bottom:8px;left:8px;z-index:70;font-family:var(--mono);font-size:10px;
+  color:#8a6a2a;max-width:46vw;line-height:1.6;display:none}
+body.noflash #static,body.noflash #tracking{opacity:calc(var(--noise)*.35)!important}
+body.noflash #invert,body.noflash #scare,body.noflash #flash{display:none}
+body.reduce #stage.shake,body.reduce #stage.lurch,body.reduce #stage.breathe{animation-duration:1ms}
+body.reduce #ambient,body.reduce #ambient2,body.reduce #tracking{animation:none}
+@media (max-width:620px){
+  #hud{font-size:9.5px;gap:10px;padding:7px 9px}
+  #prose{min-height:7.4em}
+}
+</style>
+
+<!-- ===== ambient + overlay layers ===== -->
+<div id="ambient" class="layer"></div>
+<div id="ambient2" class="layer"></div>
+
+<div id="stage">
+  <div id="scene">
+    <div class="slug" id="slug">act one — the road</div>
+    <h1 class="title" id="chTitle">&nbsp;</h1>
+    <p id="prose"></p>
+    <div id="choices"></div>
+  </div>
+</div>
+
+<canvas id="static" class="layer"></canvas>
+<div id="tracking" class="layer"></div>
+<div id="scanlines" class="layer"></div>
+<div id="vignette" class="layer"></div>
+<div id="flash" class="layer"></div>
+<div id="invert" class="layer"></div>
+<div id="scare" class="layer"></div>
+
+<div id="drip" class="layer">
+  <svg viewBox="0 0 100 118" preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+      <linearGradient id="bloodG" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3a0000"/>
+        <stop offset="42%" stop-color="#7d0000"/>
+        <stop offset="82%" stop-color="#b30000"/>
+        <stop offset="100%" stop-color="#6e0000"/>
+      </linearGradient>
+    </defs>
+    <g>
+      <rect x="-2" y="-20" width="104" height="112" fill="url(#bloodG)"/>
+      <path fill="url(#bloodG)" d="M-2 90 C 6 104, 12 92, 19 101 C 25 108, 30 94, 37 99
+        C 44 104, 47 91, 53 97 C 59 103, 64 92, 70 100 C 76 108, 81 93, 88 99
+        C 94 104, 98 93, 102 90 L 102 88 L -2 88 Z"/>
+      <path fill="#8b0000" d="M13 96 q2 12 0 16 q-2 4 -3 0 q-2 -5 0 -16 z"/>
+      <path fill="#a00000" d="M31 98 q2 16 0 21 q-2 5 -3.4 0 q-2 -6 0 -21 z"/>
+      <path fill="#8b0000" d="M50 95 q2 10 0 13 q-2 3 -3 0 q-2 -4 0 -13 z"/>
+      <path fill="#a80000" d="M67 98 q2 19 0 25 q-2 6 -3.4 0 q-2 -7 0 -25 z"/>
+      <path fill="#8b0000" d="M85 96 q2 11 0 14 q-2 4 -3 0 q-2 -5 0 -14 z"/>
+      <circle cx="31" cy="123" r="1.5" fill="#a00000"/>
+      <circle cx="67" cy="127" r="1.7" fill="#a80000"/>
+    </g>
+  </svg>
+</div>
+
+<!-- ===== HUD ===== -->
+<div id="hud">
+  <div class="grp"><b>sanity</b><span id="sanBar"><span id="sanFill"></span></span><span id="sanNum">100</span></div>
+  <div class="grp" id="hudPeople"></div>
+  <div class="grp" id="hudItems"></div>
+  <span class="spacer"></span>
+  <div class="grp">
+    <button id="btnMute" title="Mute (M)">sound on</button>
+    <input id="vol" type="range" min="0" max="100" value="62" title="Volume">
+    <button id="btnMenu" title="Menu (Esc)">menu</button>
+  </div>
+</div>
+
+<div id="warnbox"></div>
+
+<!-- ===== title screen ===== -->
+<div id="tscreen">
+  <div class="wrap">
+    <h1>CABIN<br>13</h1>
+    <p class="sub">a horror in one hundred chapters</p>
+    <p class="cw">contains: flashing imagery · sudden loud sounds · implied gore · body horror<br>
+      jump scares can be disabled in settings · volume control is in the top bar</p>
+    <div id="tchoices" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+
+<!-- ===== modal ===== -->
+<div id="modal"><div class="panel" id="panel"></div></div>
+
+<!-- ===== SVG filters ===== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- torn / rough edges on display type -->
+    <filter id="fRough" x="-12%" y="-12%" width="124%" height="124%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.022 0.09" numOctaves="4" seed="13" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="3.1" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <!-- chromatic aberration: split R and B, recombine -->
+    <filter id="fChroma" x="-6%" y="-6%" width="112%" height="112%">
+      <feOffset in="SourceGraphic" dx="-4" dy="0" result="ro"/>
+      <feColorMatrix in="ro" type="matrix" result="rc"
+        values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/>
+      <feOffset in="SourceGraphic" dx="4" dy="1" result="bo"/>
+      <feColorMatrix in="bo" type="matrix" result="bc"
+        values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"/>
+      <feColorMatrix in="SourceGraphic" type="matrix" result="gc"
+        values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"/>
+      <feBlend in="rc" in2="gc" mode="screen" result="rg"/>
+      <feBlend in="rg" in2="bc" mode="screen"/>
+    </filter>
+    <!-- possession warp: animated via requestAnimationFrame -->
+    <filter id="fWarp" x="-14%" y="-14%" width="128%" height="128%">
+      <feTurbulence id="warpTurb" type="turbulence" baseFrequency="0.004" numOctaves="2" seed="7" result="wn"/>
+      <feDisplacementMap id="warpDisp" in="SourceGraphic" in2="wn" scale="0"
+        xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   CABIN 13 — ENGINE
+   The engine knows nothing about the story. Story lives in CHAPTERS
+   (further down the file) and is pure data. See AUTHORING NOTES at the
+   bottom for the schema.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ---------- 1. the chapter registry ---------- */
+const CHAPTERS = [];              // data script pushes into this
+const REG = new Map();            // id -> chapter, built at boot
+
+/* Order the forest takes people in. "You" is never auto-taken — you are
+   only lost through the host route, so {next} always resolves to a friend. */
+const VICTIM_ORDER = ['Tobin','Ivy','Dez','Mara'];
+const CAST = ['You','Mara','Tobin','Ivy','Dez'];
+const SANITY_BREAK = 'c88';       // where sanity <= 0 dumps you
+const FALLBACK = 'c40';           // graph safety net; never fully block progress
+
+/* ---------- 2. state ---------- */
+const FRESH = () => ({
+  sanity: 100,
+  survivors: CAST.slice(),   // alive + still human
+  hollowed: [],              // taken by the forest
+  dead: [],
+  inventory: [],
+  flags: {},
+  chapter: 'c1',
+  visited: [],
+  noise: 0.06,               // VHS intensity 0..1
+  scares: 0,
+  turns: 0
+});
+let S = FRESH();
+
+/* in-memory saves only — no localStorage (sandboxed hosts block it) */
+const SAVES = { auto:null, 1:null, 2:null, 3:null };
+const clone = o => JSON.parse(JSON.stringify(o));
+
+const SETTINGS = { muted:false, volume:0.62, scares:true, reduce:false, typewriter:true };
+
+/* ---------- 3. condition language ----------
+   cond: { flags:{k:true}, has:[], hasAny:[], lacks:[], sanityMin, sanityMax,
+           aliveMin, aliveMax, alive:[], dead:[], hollow:[], hollowMin,
+           anyHollow:true, visited:[], not:{...} }                        */
+function testCond(c){
+  if(!c) return true;
+  const has = n => S.inventory.includes(n);
+  if(c.flags) for(const k in c.flags){ if(!!S.flags[k] !== !!c.flags[k]) return false; }
+  if(c.has   && !c.has.every(has)) return false;
+  if(c.hasAny&& !c.hasAny.some(has)) return false;
+  if(c.lacks && c.lacks.some(has)) return false;
+  if(c.sanityMin!=null && S.sanity < c.sanityMin) return false;
+  if(c.sanityMax!=null && S.sanity > c.sanityMax) return false;
+  if(c.aliveMin!=null && S.survivors.length < c.aliveMin) return false;
+  if(c.aliveMax!=null && S.survivors.length > c.aliveMax) return false;
+  if(c.alive && !c.alive.every(n=>S.survivors.includes(n))) return false;
+  if(c.dead  && !c.dead.every(n=>S.dead.includes(n))) return false;
+  if(c.hollow&& !c.hollow.every(n=>S.hollowed.includes(n))) return false;
+  if(c.hollowMin!=null && S.hollowed.length < c.hollowMin) return false;
+  if(c.anyHollow!=null && (S.hollowed.length>0)!==c.anyHollow) return false;
+  if(c.visited && !c.visited.every(id=>S.visited.includes(id))) return false;
+  if(c.not && testCond(c.not)) return false;
+  return true;
+}
+
+/* ---------- 4. dynamic name tokens ---------- */
+function nextVictim(){
+  return VICTIM_ORDER.find(n=>S.survivors.includes(n)) || S.survivors.find(n=>n!=='You') || 'You';
+}
+function resolveNames(list){
+  const out = [];
+  (list||[]).forEach(n=>{
+    if(n==='@NEXT') out.push(nextVictim());
+    else if(n==='@HOLLOW') { if(S.hollowed[0]) out.push(S.hollowed[0]); }
+    else if(n==='@ALLHOLLOW') out.push(...S.hollowed);
+    else out.push(n);
+  });
+  return [...new Set(out)];
+}
+const listify = a => !a.length ? 'no one'
+  : a.length===1 ? a[0]
+  : a.slice(0,-1).join(', ') + ' and ' + a[a.length-1];
+
+function tmpl(str){
+  if(!str) return '';
+  const friends = S.survivors.filter(n=>n!=='You');
+  return str
+    .replace(/\{next\}/g, nextVictim())
+    .replace(/\{hollow\}/g, S.hollowed[0] || 'it')
+    .replace(/\{hollowed\}/g, listify(S.hollowed))
+    .replace(/\{alive\}/g, listify(friends))
+    .replace(/\{friend\}/g, friends[0] || 'no one')
+    .replace(/\{lost\}/g, listify(S.dead))
+    .replace(/\{n\}/g, String(S.survivors.length))
+    .replace(/\{nf\}/g, String(friends.length));
+}
+
+/* ---------- 5. effect language ----------
+   effect: { sanity:-8, add:[], remove:[], set:{k:v}, unset:[], noise:.1,
+             kill:['@NEXT'], hollow:['Tobin'], save:['@HOLLOW'] }        */
+function applyEffect(e){
+  if(!e) return;
+  if(e.sanity) S.sanity = Math.max(0, Math.min(100, S.sanity + e.sanity));
+  if(e.noise)  S.noise  = Math.max(0, Math.min(1, S.noise + e.noise));
+  (e.add||[]).forEach(i=>{ if(!S.inventory.includes(i)) S.inventory.push(i); });
+  (e.remove||[]).forEach(i=>{ S.inventory = S.inventory.filter(x=>x!==i); });
+  if(e.set) Object.assign(S.flags, e.set);
+  (e.unset||[]).forEach(k=>{ delete S.flags[k]; });
+
+  resolveNames(e.hollow).forEach(n=>{
+    if(S.dead.includes(n) || S.hollowed.includes(n)) return;
+    S.survivors = S.survivors.filter(x=>x!==n);
+    S.hollowed.push(n);
+    if(n==='You') S.flags.youHost = true;
+  });
+  resolveNames(e.kill).forEach(n=>{
+    if(S.dead.includes(n)) return;
+    S.survivors = S.survivors.filter(x=>x!==n);
+    S.hollowed  = S.hollowed.filter(x=>x!==n);
+    S.dead.push(n);
+    if(n==='You') S.flags.youDead = true;
+  });
+  resolveNames(e.save).forEach(n=>{
+    if(!S.hollowed.includes(n)) return;
+    S.hollowed = S.hollowed.filter(x=>x!==n);
+    if(!S.survivors.includes(n)) S.survivors.push(n);
+    S.flags.curedSomeone = true;
+  });
+}
+
+/* ---------- 6. ending resolution ----------
+   Any choice may target '@ENDING'; the first matching rule wins.       */
+const ENDING_RULES = [
+  { cond:{flags:{youHost:true}},                                    go:'e2' },
+  { cond:{flags:{youDead:true}},                                    go:'e4' },
+  { cond:{aliveMax:0},                                              go:'e4' },
+  { cond:{flags:{ledgerSealed:true, wardenStays:true}},              go:'e5' },
+  { cond:{flags:{recordedTape:true}},                               go:'e8' },
+  { cond:{flags:{ledgerBurned:true, cabinBurned:true}},              go:'e3' },
+  { cond:{flags:{ledgerSealed:true}},                               go:'e5' },
+  { cond:{flags:{mercyDone:true}},                                  go:'e7' },
+  { cond:{flags:{ledgerCarried:true}},                              go:'e6' },
+  { cond:{anyHollow:true, aliveMin:1},                              go:'e9' },
+  { cond:{aliveMin:2},                                              go:'e1' },
+  { cond:{aliveMin:1},                                              go:'e7' }
+];
+function resolveEnding(){
+  const r = ENDING_RULES.find(r=>testCond(r.cond));
+  return r ? r.go : 'e4';
+}
+
+/* ---------- 7. routing ---------- */
+function resolveNext(choice){
+  let id = choice.next;
+  if(choice.nextIf){
+    const hit = choice.nextIf.find(b=>testCond(b.cond));
+    if(hit) id = hit.next;
+  }
+  if(id === '@ENDING') id = resolveEnding();
+  if(!REG.has(id)){ warn('missing chapter "'+id+'" — routed to '+FALLBACK); id = FALLBACK; }
+  return id;
+}
+
+/* ══════════════════ AUDIO — procedural, lazy, no external files ══════════════════
+   Everything is synthesised in WebAudio and cached on first use, so a chapter
+   only pays for the sounds it actually reaches (the "lazy load per chapter"
+   requirement, minus the network). */
+const Audio2 = (()=>{
+  let ctx=null, master=null, droneOn=false, creakTimer=null, gate=false;
+  const cache = new Map();
+
+  function ensureCtx(){
+    if(ctx) return ctx;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return null;
+    ctx = new AC();
+    master = ctx.createGain();
+    master.gain.value = SETTINGS.muted ? 0 : SETTINGS.volume;
+    master.connect(ctx.destination);
+    return ctx;
+  }
+  const now = () => ctx.currentTime;
+
+  function noiseBuf(sec){
+    const key='nb'+sec;
+    if(cache.has(key)) return cache.get(key);
+    const len = Math.floor(ctx.sampleRate*sec);
+    const b = ctx.createBuffer(1,len,ctx.sampleRate);
+    const d = b.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+    cache.set(key,b); return b;
+  }
+  function noiseSrc(sec){ const s=ctx.createBufferSource(); s.buffer=noiseBuf(sec); return s; }
+  function env(g,t,a,d,peak){
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(peak,t+a);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+a+d);
+  }
+
+  /* ---- continuous drone: wind + low bed + far-off creaks ---- */
+  function startDrone(){
+    if(!ensureCtx() || droneOn) return;
+    droneOn = true;
+    const bed = ctx.createGain(); bed.gain.value=0.16; bed.connect(master);
+
+    // wind: noise -> resonant lowpass, LFO on cutoff
+    const w = noiseSrc(6); w.loop = true;
+    const lp = ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=340; lp.Q.value=6;
+    const wg = ctx.createGain(); wg.gain.value=0.5;
+    const lfo = ctx.createOscillator(); lfo.frequency.value=0.06;
+    const lfoAmt = ctx.createGain(); lfoAmt.gain.value=190;
+    lfo.connect(lfoAmt).connect(lp.frequency);
+    const lfo2 = ctx.createOscillator(); lfo2.frequency.value=0.17;
+    const lfo2Amt = ctx.createGain(); lfo2Amt.gain.value=0.22;
+    lfo2.connect(lfo2Amt).connect(wg.gain);
+    w.connect(lp).connect(wg).connect(bed);
+    w.start(); lfo.start(); lfo2.start();
+
+    // two detuned low oscillators — the room's pulse
+    [41.2, 61.7].forEach((f,i)=>{
+      const o = ctx.createOscillator(); o.type = i?'triangle':'sine'; o.frequency.value=f;
+      const g = ctx.createGain(); g.gain.value = i?0.05:0.09;
+      const dt = ctx.createOscillator(); dt.frequency.value = 0.033+i*0.021;
+      const dg = ctx.createGain(); dg.gain.value = 1.6;
+      dt.connect(dg).connect(o.frequency);
+      o.connect(g).connect(bed); o.start(); dt.start();
+    });
+
+    scheduleCreaks();
+  }
+  function scheduleCreaks(){
+    clearTimeout(creakTimer);
+    creakTimer = setTimeout(()=>{
+      if(droneOn && !gate) play(Math.random()<0.45?'drip':'creak', 0.32);
+      scheduleCreaks();
+    }, 7000 + Math.random()*13000);
+  }
+
+  /* ---- one-shots ---- */
+  const VOICES = {
+    heartbeat(t,v){
+      [0,0.31].forEach((off,i)=>{
+        const o=ctx.createOscillator(), g=ctx.createGain(), f=ctx.createBiquadFilter();
+        f.type='lowpass'; f.frequency.value=180;
+        o.type='sine'; o.frequency.setValueAtTime(86,t+off);
+        o.frequency.exponentialRampToValueAtTime(34,t+off+0.17);
+        env(g,t+off,0.008,0.2,(i?0.55:0.9)*v);
+        o.connect(f).connect(g).connect(master); o.start(t+off); o.stop(t+off+0.34);
+      });
+    },
+    static(t,v){
+      const s=noiseSrc(1.1), bp=ctx.createBiquadFilter(), g=ctx.createGain();
+      bp.type='bandpass'; bp.Q.value=1.1;
+      bp.frequency.setValueAtTime(4200,t); bp.frequency.exponentialRampToValueAtTime(520,t+0.42);
+      env(g,t,0.006,0.44,0.5*v);
+      s.connect(bp).connect(g).connect(master); s.start(t); s.stop(t+0.6);
+    },
+    whisper(t,v){
+      const s=noiseSrc(1.4), g=ctx.createGain();
+      const f1=ctx.createBiquadFilter(); f1.type='bandpass'; f1.frequency.value=740; f1.Q.value=7;
+      const f2=ctx.createBiquadFilter(); f2.type='bandpass'; f2.frequency.value=1620; f2.Q.value=9;
+      const mix=ctx.createGain();
+      s.connect(f1).connect(mix); s.connect(f2).connect(mix);
+      // amplitude "syllables"
+      const t0=t; g.gain.setValueAtTime(0.0001,t0);
+      for(let i=0;i<5;i++){
+        const a=t0+i*0.17;
+        g.gain.exponentialRampToValueAtTime((0.12+Math.random()*0.2)*v,a+0.05);
+        g.gain.exponentialRampToValueAtTime(0.02*v,a+0.14);
+      }
+      g.gain.exponentialRampToValueAtTime(0.0001,t0+0.95);
+      mix.connect(g).connect(master); s.start(t); s.stop(t+1.1);
+    },
+    growl(t,v){
+      const o=ctx.createOscillator(), o2=ctx.createOscillator(), rm=ctx.createGain(), g=ctx.createGain();
+      o.type='sawtooth'; o.frequency.setValueAtTime(74,t);
+      o.frequency.exponentialRampToValueAtTime(41,t+0.55);
+      o2.type='square'; o2.frequency.value=27;          // ring-mod for the "wrong throat"
+      const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=620;
+      o2.connect(rm.gain); o.connect(rm);
+      env(g,t,0.05,0.6,0.42*v);
+      rm.connect(lp).connect(g).connect(master);
+      o.start(t); o2.start(t); o.stop(t+0.75); o2.stop(t+0.75);
+    },
+    creak(t,v){
+      const o=ctx.createOscillator(), g=ctx.createGain(), bp=ctx.createBiquadFilter();
+      o.type='sawtooth'; bp.type='bandpass'; bp.Q.value=13; bp.frequency.value=430;
+      const base=150+Math.random()*90;
+      o.frequency.setValueAtTime(base,t);
+      for(let i=1;i<=7;i++) o.frequency.linearRampToValueAtTime(base*(1+i*0.07+Math.random()*0.05), t+i*0.09);
+      env(g,t,0.09,0.62,0.2*v);
+      o.connect(bp).connect(g).connect(master); o.start(t); o.stop(t+0.85);
+    },
+    drip(t,v){
+      const o=ctx.createOscillator(), g=ctx.createGain(), d=ctx.createDelay();
+      d.delayTime.value=0.19; const fb=ctx.createGain(); fb.gain.value=0.3;
+      o.type='sine'; o.frequency.setValueAtTime(1250,t);
+      o.frequency.exponentialRampToValueAtTime(240,t+0.09);
+      env(g,t,0.003,0.14,0.3*v);
+      o.connect(g); g.connect(master); g.connect(d); d.connect(fb).connect(d); d.connect(master);
+      o.start(t); o.stop(t+0.2);
+    },
+    wood(t,v){        // heavy impact / axe / slam
+      const s=noiseSrc(0.5), g=ctx.createGain(), lp=ctx.createBiquadFilter();
+      lp.type='lowpass'; lp.frequency.setValueAtTime(1800,t);
+      lp.frequency.exponentialRampToValueAtTime(180,t+0.2);
+      env(g,t,0.004,0.26,0.6*v);
+      s.connect(lp).connect(g).connect(master); s.start(t); s.stop(t+0.4);
+      const o=ctx.createOscillator(), g2=ctx.createGain();
+      o.type='triangle'; o.frequency.setValueAtTime(120,t); o.frequency.exponentialRampToValueAtTime(48,t+0.18);
+      env(g2,t,0.004,0.2,0.4*v); o.connect(g2).connect(master); o.start(t); o.stop(t+0.3);
+    },
+    breath(t,v){
+      const s=noiseSrc(2), g=ctx.createGain(), bp=ctx.createBiquadFilter();
+      bp.type='bandpass'; bp.frequency.value=520; bp.Q.value=1.6;
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(0.16*v,t+0.42);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+1.3);
+      s.connect(bp).connect(g).connect(master); s.start(t); s.stop(t+1.4);
+    },
+    sting(t,v){       // jump-scare hit: cluster + noise slam
+      const s=noiseSrc(1), g=ctx.createGain(), hp=ctx.createBiquadFilter();
+      hp.type='highpass'; hp.frequency.value=300;
+      env(g,t,0.002,0.7,0.95*v);
+      s.connect(hp).connect(g).connect(master); s.start(t); s.stop(t+0.9);
+      [880,1180,1560,2330].forEach((f,i)=>{
+        const o=ctx.createOscillator(), og=ctx.createGain();
+        o.type='sawtooth'; o.frequency.setValueAtTime(f,t);
+        o.frequency.exponentialRampToValueAtTime(f*0.22,t+0.55);
+        env(og,t,0.003,0.6,0.16*v);
+        o.connect(og).connect(master); o.start(t); o.stop(t+0.7);
+      });
+      const sub=ctx.createOscillator(), sg=ctx.createGain();
+      sub.type='sine'; sub.frequency.setValueAtTime(70,t); sub.frequency.exponentialRampToValueAtTime(26,t+0.8);
+      env(sg,t,0.004,0.85,0.8*v); sub.connect(sg).connect(master); sub.start(t); sub.stop(t+0.95);
+    },
+    chime(t,v){       // seal / ending resonance
+      [196,294,392,588].forEach((f,i)=>{
+        const o=ctx.createOscillator(), g=ctx.createGain();
+        o.type='sine'; o.frequency.value=f;
+        g.gain.setValueAtTime(0.0001,t+i*0.09);
+        g.gain.exponentialRampToValueAtTime(0.13*v,t+i*0.09+0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001,t+i*0.09+2.2);
+        o.connect(g).connect(master); o.start(t+i*0.09); o.stop(t+i*0.09+2.4);
+      });
+    }
+  };
+  const ALIASES = { safe:'creak', danger:'static', possess:'whisper', hit:'wood' };
+
+  function play(name, vol=1){
+    if(SETTINGS.muted || gate) return;
+    if(!ensureCtx()) return;
+    if(ctx.state==='suspended') ctx.resume();
+    const key = ALIASES[name] || name;
+    const fn = VOICES[key]; if(!fn) return;
+    try{ fn(now()+0.005, vol); }catch(e){}
+  }
+  /* pre-build the noise buffers a chapter's sounds will need */
+  function warm(names){
+    if(SETTINGS.muted && !droneOn) return;
+    if(!ensureCtx()) return;
+    const cb = window.requestIdleCallback || (f=>setTimeout(f,60));
+    cb(()=>{ try{ noiseBuf(0.5); noiseBuf(1); noiseBuf(1.1); noiseBuf(1.4); }catch(e){} });
+  }
+  /* cut to silence for a beat after a scare */
+  function silence(ms){
+    if(!ctx) return;
+    gate = true;
+    const g = master.gain, t = now();
+    g.cancelScheduledValues(t); g.setValueAtTime(g.value,t);
+    g.linearRampToValueAtTime(0.0001,t+0.05);
+    setTimeout(()=>{
+      gate = false;
+      if(!ctx) return;
+      const t2=now(), tgt=SETTINGS.muted?0:SETTINGS.volume;
+      g.cancelScheduledValues(t2); g.setValueAtTime(0.0001,t2);
+      g.linearRampToValueAtTime(tgt,t2+0.9);
+    }, ms);
+  }
+  function setVolume(v){
+    SETTINGS.volume=v;
+    if(master && !gate) master.gain.value = SETTINGS.muted?0:v;
+  }
+  function setMuted(m){
+    SETTINGS.muted=m;
+    if(!m){ ensureCtx(); if(ctx&&ctx.state==='suspended') ctx.resume(); startDrone(); }
+    if(master && !gate) master.gain.value = m?0:SETTINGS.volume;
+  }
+  return { play, warm, silence, setVolume, setMuted, startDrone,
+           get ready(){ return !!ctx; } };
+})();
+
+/* ══════════════════════ VISUAL FX ══════════════════════ */
+const stage   = document.getElementById('stage');
+const elFlash = document.getElementById('flash');
+const elInv   = document.getElementById('invert');
+const elScare = document.getElementById('scare');
+const elDrip  = document.getElementById('drip');
+
+/* --- VHS static, drawn small and stretched --- */
+(function staticLoop(){
+  const cv = document.getElementById('static');
+  const ctx2 = cv.getContext('2d', { alpha:true });
+  const W=320, H=180;
+  cv.width=W; cv.height=H;
+  const img = ctx2.createImageData(W,H);
+  let last=0;
+  function frame(t){
+    if(t-last > 55){
+      last=t;
+      const d=img.data, amp = 90 + S.noise*165;
+      for(let i=0;i<d.length;i+=4){
+        const v = Math.random()*amp;
+        d[i]=v; d[i+1]=v*0.86; d[i+2]=v*0.82; d[i+3]= Math.random()<0.55 ? 255 : 0;
+      }
+      // occasional horizontal dropout bar
+      if(Math.random() < 0.06 + S.noise*0.3){
+        const y0 = (Math.random()*H)|0, h = 1+((Math.random()*4)|0);
+        for(let y=y0;y<Math.min(H,y0+h);y++)
+          for(let x=0;x<W;x++){ const i=(y*W+x)*4; d[i]=d[i+1]=d[i+2]=210; d[i+3]=200; }
+      }
+      ctx2.putImageData(img,0,0);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+
+function setNoise(n){
+  S.noise = Math.max(0.03, Math.min(1, n));
+  document.documentElement.style.setProperty('--noise', (0.05 + S.noise*0.26).toFixed(3));
+  document.documentElement.style.setProperty('--pulse', (7.5 - S.noise*5.4).toFixed(2)+'s');
+}
+
+/* --- possession warp, animated with requestAnimationFrame --- */
+function warpFX(dur=700){
+  if(SETTINGS.reduce) return;
+  const turb = document.getElementById('warpTurb');
+  const disp = document.getElementById('warpDisp');
+  const target = document.getElementById('scene');
+  target.style.filter = 'url(#fWarp)';
+  const t0 = performance.now();
+  (function step(now){
+    const p = Math.min(1,(now-t0)/dur);
+    const e = Math.sin(p*Math.PI);                    // ease in/out ripple
+    turb.setAttribute('baseFrequency', (0.005 + 0.034*e + 0.01*Math.sin(p*22)).toFixed(4));
+    disp.setAttribute('scale', (44*e).toFixed(2));
+    if(p<1) requestAnimationFrame(step);
+    else { disp.setAttribute('scale','0'); target.style.filter=''; }
+  })(t0);
+}
+
+/* --- jump-scare imagery: original silhouettes, stark high contrast --- */
+const SCARE_ART = {
+  face:`<svg viewBox="0 0 400 400"><rect width="400" height="400" fill="#000"/>
+    <path d="M200 22c-64 0-104 46-104 118 0 62 22 104 50 150 18 30 36 66 54 66s36-36 54-66c28-46 50-88 50-150C304 68 264 22 200 22z" fill="#efe7d8"/>
+    <ellipse cx="156" cy="150" rx="27" ry="37" fill="#000"/><ellipse cx="244" cy="150" rx="27" ry="37" fill="#000"/>
+    <path d="M92 236c40 30 76 44 108 44s68-14 108-44c-26 62-60 92-108 92s-82-30-108-92z" fill="#000"/>
+    <g fill="#efe7d8">
+      <path d="M116 250l16 30 12-28z"/><path d="M148 258l14 38 13-36z"/><path d="M182 262l14 42 13-42z"/>
+      <path d="M216 262l13 40 14-40z"/><path d="M250 256l13 36 14-36z"/><path d="M282 248l14 28 12-30z"/>
+    </g>
+    <path d="M200 178l-13 40h26z" fill="#000"/>
+    <path d="M126 96c22 8 44 10 62 6M312 96c-22 8-44 10-62 6" stroke="#000" stroke-width="6" fill="none"/>
+  </svg>`,
+  hands:`<svg viewBox="0 0 400 400"><rect width="400" height="400" fill="#000"/>
+    <g fill="#efe7d8">
+      <path d="M60 400c-6-90 4-160 26-196 8-14 22-10 22 6 0-72 4-116 16-118s16 40 18 112c2-70 8-112 20-112s16 44 16 116c2-64 8-104 20-102s14 42 12 108c4-48 12-78 24-74s12 34 6 84c-8 66-18 106-26 176z"/>
+      <path d="M340 400c6-84-6-150-28-184-8-12-22-8-22 8 2-70-4-112-16-114s-16 38-18 108c-2-68-8-108-20-108s-16 42-16 112c-2-62-8-100-20-98s-14 40-12 104"/>
+    </g>
+    <g stroke="#000" stroke-width="5" fill="none">
+      <path d="M96 250c14 6 28 6 42 0M150 232c14 6 28 6 42 0M246 240c14 6 28 6 42 0"/>
+    </g></svg>`,
+  maw:`<svg viewBox="0 0 400 400"><rect width="400" height="400" fill="#efe7d8"/>
+    <ellipse cx="200" cy="200" rx="176" ry="128" fill="#000"/>
+    <g fill="#efe7d8">
+      <path d="M32 194l26 54 22-52zM86 200l26 66 24-64zM142 204l26 74 24-72zM198 204l26 74 24-74zM254 198l26 64 24-64zM308 190l26 52 22-54z"/>
+      <path d="M40 210l24-54 22 56zM96 218l24-62 24 64zM152 224l24-70 24 72zM208 222l24-70 24 72zM264 214l24-62 24 62zM316 204l24-52 22 54z"/>
+    </g>
+    <ellipse cx="200" cy="200" rx="42" ry="30" fill="#000"/></svg>`,
+  eyes:`<svg viewBox="0 0 400 400"><rect width="400" height="400" fill="#000"/>
+    <g fill="#efe7d8">
+      <path d="M40 150c40-40 100-40 140 0-40 42-100 42-140 0z"/>
+      <path d="M220 150c40-40 100-40 140 0-40 42-100 42-140 0z"/>
+      <path d="M70 268c50-30 110-30 160 0-50 32-110 32-160 0z"/>
+    </g>
+    <circle cx="110" cy="150" r="26" fill="#000"/><circle cx="290" cy="150" r="26" fill="#000"/>
+    <circle cx="150" cy="268" r="20" fill="#000"/>
+  </svg>`,
+  tree:`<svg viewBox="0 0 400 400"><rect width="400" height="400" fill="#000"/>
+    <g stroke="#efe7d8" stroke-width="7" fill="none">
+      <path d="M200 400V120M200 200l-70-70M200 240l70-80M200 160l-56-88M200 300l60-56M130 130l-40-58M270 160l44-56M144 72l-30-42M314 104l34-46"/>
+    </g>
+    <path d="M172 60c0-26 12-40 28-40s28 14 28 40-12 44-28 44-28-18-28-44z" fill="#efe7d8"/>
+    <circle cx="188" cy="52" r="7" fill="#000"/><circle cx="212" cy="52" r="7" fill="#000"/>
+    <path d="M182 74c12 10 24 10 36 0" stroke="#000" stroke-width="5" fill="none"/>
+  </svg>`
+};
+function jumpScare(cfg){
+  const c = Object.assign({ art:'face', silence:900, vol:1 }, cfg||{});
+  S.scares++;
+  Audio2.play('sting', c.vol);
+  if(SETTINGS.scares){
+    elScare.innerHTML = SCARE_ART[c.art] || SCARE_ART.face;
+    elScare.classList.remove('on'); void elScare.offsetWidth; elScare.classList.add('on');
+    stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake');
+    stage.classList.add('chroma');
+    setTimeout(()=>stage.classList.remove('chroma'), 300);
+    setTimeout(()=>{ elScare.classList.remove('on'); elScare.innerHTML=''; }, 560);
+  }
+  Audio2.silence(c.silence);          // then cut to nothing for a beat
+}
+
+/* --- reaction dispatch: every reaction resolves in <=800ms --- */
+const REACTION_MS = { safe:620, danger:560, possess:700 };
+function reaction(tone){
+  const t = REACTION_MS[tone] ? tone : 'safe';
+  stage.classList.remove('shake','breathe','lurch','chroma');
+  void stage.offsetWidth;
+  if(t==='safe'){
+    stage.classList.add('breathe');
+  } else if(t==='danger'){
+    stage.classList.add('shake','chroma');
+    elFlash.classList.remove('on'); void elFlash.offsetWidth; elFlash.classList.add('on');
+    setTimeout(()=>stage.classList.remove('chroma'), 260);
+  } else {
+    stage.classList.add('lurch');
+    warpFX(700);
+    elInv.classList.remove('on'); void elInv.offsetWidth; elInv.classList.add('on');
+  }
+  setTimeout(()=>{
+    stage.classList.remove('shake','breathe','lurch','chroma');
+    elFlash.classList.remove('on'); elInv.classList.remove('on');
+  }, REACTION_MS[t]+40);
+  return REACTION_MS[t];
+}
+
+/* --- blood drip chapter transition --- */
+function dripTransition(swap){
+  elDrip.classList.remove('fall','rise');
+  void elDrip.offsetWidth;
+  elDrip.classList.add('fall');
+  Audio2.play('drip', 0.5);
+  setTimeout(()=>{
+    swap();
+    elDrip.classList.remove('fall');
+    void elDrip.offsetWidth;
+    elDrip.classList.add('rise');
+    setTimeout(()=>elDrip.classList.remove('rise'), 440);
+  }, 410);
+}
+
+/* --- ambient whispers at high danger --- */
+const WHISPER_WORDS = ['read it again','thirteen','let me in','say my name','you left the door',
+  'not your voice','under the floor','look up','one of them is empty','it is almost light'];
+let whisperTimer=null;
+function whisperTick(){
+  clearTimeout(whisperTimer);
+  whisperTimer = setTimeout(()=>{
+    if(S.noise > 0.42 && !document.getElementById('modal').classList.contains('on')){
+      const el = document.createElement('div');
+      el.className='whisper';
+      el.textContent = WHISPER_WORDS[(Math.random()*WHISPER_WORDS.length)|0];
+      el.style.left = (6+Math.random()*62)+'vw';
+      el.style.top  = (14+Math.random()*68)+'vh';
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(), 2700);
+      if(Math.random()<0.5) Audio2.play('whisper', 0.35);
+    }
+    whisperTick();
+  }, 9000 + Math.random()*11000);
+}
+
+/* ══════════════════════ RENDER ══════════════════════ */
+const elSlug=document.getElementById('slug'), elTitle=document.getElementById('chTitle'),
+      elProse=document.getElementById('prose'), elChoices=document.getElementById('choices'),
+      elScene=document.getElementById('scene');
+
+const ACT_NAMES = {1:'act one — the road',2:'act two — the first word',
+  3:'act three — the spread',4:'act four — before dawn',5:'ending'};
+
+let typer=null, awaitingSkip=false;
+function typeOut(node, text, done){
+  clearInterval(typer);
+  if(!SETTINGS.typewriter || SETTINGS.reduce){ node.innerHTML = text; done&&done(); return; }
+  node.innerHTML='';
+  // split into html-safe chunks: we only allow <em> and <span class="q">
+  const holder = document.createElement('span');
+  holder.innerHTML = text;
+  const full = holder.innerHTML;
+  let i=0, revealed=false; awaitingSkip=true;
+  const cur = '<span class="cursor"></span>';
+  typer = setInterval(()=>{
+    i += 4;
+    // don't cut in the middle of a tag
+    let slice = full.slice(0,i);
+    const lastOpen = slice.lastIndexOf('<'), lastClose = slice.lastIndexOf('>');
+    if(lastOpen > lastClose) slice = slice.slice(0,lastOpen);
+    node.innerHTML = slice + cur;
+    // let the choices start fading in before the last line lands
+    if(!revealed && i > full.length*0.62){ revealed=true; elChoices.classList.add('in'); }
+    if(i >= full.length){
+      clearInterval(typer); node.innerHTML = full; awaitingSkip=false; done&&done();
+    }
+  }, 10);
+}
+function skipType(){
+  if(!awaitingSkip) return;
+  clearInterval(typer); awaitingSkip=false;
+  elProse.innerHTML = tmpl(REG.get(S.chapter).text);
+  elChoices.classList.add('in');
+}
+elScene.addEventListener('click', e=>{ if(!e.target.closest('.choice')) skipType(); });
+
+function render(){
+  const ch = REG.get(S.chapter);
+  if(!ch){ warn('cannot render "'+S.chapter+'"'); S.chapter=FALLBACK; return render(); }
+  // on-arrival effects fire once, on first visit only, before any text is templated
+  if(!S.visited.includes(ch.id)){
+    S.visited.push(ch.id);
+    if(ch.enter) applyEffect(ch.enter);
+    if(ch.enterIf){ const h=ch.enterIf.find(b=>testCond(b.cond)); if(h) applyEffect(h.effect); }
+  }
+  S.turns++;
+  SAVES.auto = clone(S);
+
+  setNoise(Math.max(ch.danger ?? 0.06, S.noise * 0.94));
+  elSlug.textContent = ch.ending ? 'ending — ' + ch.ending : (ACT_NAMES[ch.act]||'');
+  elTitle.innerHTML = tmpl(ch.title);
+  elChoices.classList.remove('in');
+  elChoices.innerHTML='';
+  elScene.scrollTop = 0;
+
+  const KEYS=['I','II','III'];
+  ch.choices.forEach((c,i)=>{
+    const b=document.createElement('button');
+    b.className='choice'; b.type='button';
+    b.innerHTML = '<span class="k">'+KEYS[i]+'</span>' + tmpl(c.label) +
+      (c.tag ? '<span class="tag">'+c.tag+'</span>' : '');
+    b.addEventListener('click', ()=>choose(i));
+    elChoices.appendChild(b);
+  });
+
+  Audio2.warm();
+  typeOut(elProse, tmpl(ch.text), ()=>elChoices.classList.add('in'));
+  elScene.querySelectorAll('.ending-badge').forEach(b=>b.remove());
+  if(ch.ending){
+    const badge=document.createElement('div');
+    badge.className='ending-badge'; badge.textContent='ending — '+ch.ending;
+    elProse.parentNode.insertBefore(badge, elProse);
+    Audio2.play(ch.sound||'chime', 0.8);
+  }
+  if(ch.scare) setTimeout(()=>jumpScare(ch.scare), ch.scare.delay ?? 620);
+  else if(ch.sound && !ch.ending) Audio2.play(ch.sound, 0.55);
+  drawHUD();
+}
+
+let locked=false;
+function choose(i){
+  if(locked) return;
+  const ch = REG.get(S.chapter), c = ch.choices[i];
+  if(!c) return;
+  locked = true;
+  skipType();
+
+  Audio2.play(c.sound || c.tone || 'safe', 0.75);
+  const ms = reaction(c.tone);
+
+  applyEffect(c.effect);
+  if(c.effectIf){
+    const hit = c.effectIf.find(b=>testCond(b.cond));
+    if(hit) applyEffect(hit.effect);
+  }
+  drawHUD();
+
+  let dest = resolveNext(c);
+  // sanity collapse overrides — unless we're already headed to an ending
+  if(S.sanity<=0 && !REG.get(dest).ending && S.chapter!==SANITY_BREAK && !S.flags.brokeOnce){
+    S.flags.brokeOnce = true; dest = SANITY_BREAK;
+  }
+
+  setTimeout(()=>{
+    dripTransition(()=>{
+      if(c.restart) S = FRESH();      // endings offer a clean run from chapter one
+      S.chapter = dest;
+      render();
+    });
+    setTimeout(()=>{ locked=false; }, 460);
+  }, Math.max(140, ms - 180));
+}
+
+/* ---------- HUD ---------- */
+function drawHUD(){
+  document.getElementById('sanFill').style.width = S.sanity+'%';
+  document.getElementById('sanNum').textContent = S.sanity;
+  const P=document.getElementById('hudPeople');
+  P.innerHTML='<b>with you</b>' + CAST.map(n=>{
+    const cls = S.dead.includes(n)?'dead' : S.hollowed.includes(n)?'hollow' : '';
+    const mark= S.dead.includes(n)?'' : S.hollowed.includes(n)?' ✕' : '';
+    return '<span class="pill '+cls+'">'+n+mark+'</span>';
+  }).join('');
+  const I=document.getElementById('hudItems');
+  I.innerHTML = S.inventory.length
+    ? '<b>carried</b>'+S.inventory.map(i=>'<span class="pill item">'+i+'</span>').join('')
+    : '<b>carried</b><span class="pill item">nothing</span>';
+}
+
+/* ---------- warnings (author aid) ---------- */
+const warnings=[];
+function warn(m){
+  warnings.push(m); console.warn('[cabin13] '+m);
+  const w=document.getElementById('warnbox');
+  w.style.display='block';
+  w.textContent = '⚠ '+warnings.length+' graph warning(s) — see console';
+}
+
+/* ══════════════════════ UI: title, menu, chapter select ══════════════════════ */
+const modal=document.getElementById('modal'), panel=document.getElementById('panel');
+function openModal(html){ panel.innerHTML=html; modal.classList.add('on'); }
+function closeModal(){ modal.classList.remove('on'); }
+modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
+
+function titleScreen(){
+  const t=document.getElementById('tscreen');
+  t.classList.remove('gone');
+  const box=document.getElementById('tchoices');
+  box.innerHTML='';
+  const opts=[
+    ['Push the door open','begin'],
+    ['Chapter select','jump'],
+    ['Settings','set']
+  ];
+  opts.forEach(([label,act],i)=>{
+    const b=document.createElement('button');
+    b.className='choice'; b.innerHTML='<span class="k">'+['I','II','III'][i]+'</span>'+label;
+    b.onclick=()=>{
+      Audio2.setMuted(SETTINGS.muted); Audio2.startDrone();
+      if(act==='begin'){ Audio2.play('wood',0.6); t.classList.add('gone'); S=FRESH(); render(); }
+      if(act==='jump') chapterSelect();
+      if(act==='set') settingsPanel();
+    };
+    box.appendChild(b);
+  });
+}
+
+function menuPanel(){
+  openModal(`
+    <h2>Cabin 13</h2>
+    <h3>progress</h3>
+    <div class="row">
+      <button class="mini" data-a="save1">save → 1</button>
+      <button class="mini" data-a="save2">save → 2</button>
+      <button class="mini" data-a="save3">save → 3</button>
+    </div>
+    <div class="row">
+      <button class="mini" data-a="load1">load 1${SAVES[1]?' ('+SAVES[1].chapter+')':' (empty)'}</button>
+      <button class="mini" data-a="load2">load 2${SAVES[2]?' ('+SAVES[2].chapter+')':' (empty)'}</button>
+      <button class="mini" data-a="load3">load 3${SAVES[3]?' ('+SAVES[3].chapter+')':' (empty)'}</button>
+    </div>
+    <p class="note">Saves live in memory for this page session only — no localStorage,
+      so this runs inside sandboxed frames. Reloading the page clears them.</p>
+    <h3>navigate</h3>
+    <div class="row">
+      <button class="mini" data-a="jump">chapter select</button>
+      <button class="mini" data-a="set">settings</button>
+      <button class="mini" data-a="state">inspect state</button>
+      <button class="mini" data-a="restart">restart from chapter one</button>
+    </div>
+    <div class="row"><button class="mini" data-a="close">back to the dark</button></div>
+  `);
+  panel.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{
+    const a=b.dataset.a;
+    if(a.startsWith('save')){ SAVES[a[4]]=clone(S); menuPanel(); }
+    else if(a.startsWith('load')){ const s=SAVES[a[4]]; if(s){ S=clone(s); closeModal();
+      document.getElementById('tscreen').classList.add('gone'); render(); } }
+    else if(a==='jump') chapterSelect();
+    else if(a==='set') settingsPanel();
+    else if(a==='state') statePanel();
+    else if(a==='restart'){ S=FRESH(); closeModal();
+      document.getElementById('tscreen').classList.add('gone'); render(); }
+    else closeModal();
+  });
+}
+
+function settingsPanel(){
+  openModal(`
+    <h2>Settings</h2>
+    <h3>sound</h3>
+    <div class="row">
+      <button class="mini ${SETTINGS.muted?'':'on'}" data-t="mute">${SETTINGS.muted?'sound is off':'sound is on'}</button>
+      <label class="ck">volume <input id="vol2" type="range" min="0" max="100" value="${Math.round(SETTINGS.volume*100)}"></label>
+    </div>
+    <h3>intensity</h3>
+    <div class="row">
+      <button class="mini ${SETTINGS.scares?'on':''}" data-t="scares">jump scares ${SETTINGS.scares?'on':'off'}</button>
+      <button class="mini ${SETTINGS.reduce?'on':''}" data-t="reduce">reduced motion ${SETTINGS.reduce?'on':'off'}</button>
+      <button class="mini ${SETTINGS.typewriter?'on':''}" data-t="type">typewriter ${SETTINGS.typewriter?'on':'off'}</button>
+    </div>
+    <p class="note">Jump scares off keeps the sting sound but removes the flashed image and the
+      screen shake. Reduced motion also calms the flicker and static. Ten scares are scripted
+      across the hundred chapters — never two in a row.</p>
+    <div class="row"><button class="mini" data-t="close">back</button></div>
+  `);
+  panel.querySelector('#vol2').oninput = e=>{
+    Audio2.setVolume(e.target.value/100);
+    document.getElementById('vol').value = e.target.value;
+  };
+  panel.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{
+    const t=b.dataset.t;
+    if(t==='mute'){ Audio2.setMuted(!SETTINGS.muted); syncSoundBtn(); settingsPanel(); }
+    else if(t==='scares'){ SETTINGS.scares=!SETTINGS.scares;
+      document.body.classList.toggle('noflash', !SETTINGS.scares); settingsPanel(); }
+    else if(t==='reduce'){ SETTINGS.reduce=!SETTINGS.reduce;
+      document.body.classList.toggle('reduce', SETTINGS.reduce); settingsPanel(); }
+    else if(t==='type'){ SETTINGS.typewriter=!SETTINGS.typewriter; settingsPanel(); }
+    else closeModal();
+  });
+}
+
+function chapterSelect(){
+  const acts={};
+  CHAPTERS.forEach(c=>{ (acts[c.act]=acts[c.act]||[]).push(c); });
+  let html='<h2>Chapter select</h2><p class="note">For testing. Jumping preserves your current '+
+    'state object, so a late chapter may read oddly without the flags that lead there. '+
+    'Use “grant every item” to unlock item-gated branches.</p>'+
+    '<div class="row"><button class="mini" data-g="items">grant every item</button>'+
+    '<button class="mini" data-g="fresh">reset state</button>'+
+    '<button class="mini" data-g="close">back</button></div>';
+  Object.keys(acts).sort().forEach(a=>{
+    html += '<h3>'+(ACT_NAMES[a]||('act '+a))+' — '+acts[a].length+' chapters</h3><div class="grid">';
+    acts[a].forEach(c=>{
+      html += '<button class="jump" data-j="'+c.id+'"><i>'+c.id+'</i>'+
+        c.title.replace(/<[^>]+>/g,'').replace(/\{[a-z]+\}/g,'…')+'</button>';
+    });
+    html+='</div>';
+  });
+  openModal(html);
+  panel.querySelectorAll('[data-j]').forEach(b=>b.onclick=()=>{
+    S.chapter=b.dataset.j; closeModal();
+    document.getElementById('tscreen').classList.add('gone');
+    Audio2.startDrone(); render();
+  });
+  panel.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{
+    const g=b.dataset.g;
+    if(g==='items'){ S.inventory=[...new Set([...S.inventory,...ALL_ITEMS])];
+      Object.assign(S.flags,{sealVerse:true,heardTapes:true,namesWork:true}); drawHUD(); chapterSelect(); }
+    else if(g==='fresh'){ S=FRESH(); drawHUD(); chapterSelect(); }
+    else closeModal();
+  });
+}
+const ALL_ITEMS=['hatchet','brass key','rock salt','kerosene','iron nails','mirror shard',
+  'chalk','flare','tape player','the Ledger','torn page','truck keys'];
+
+function statePanel(){
+  openModal('<h2>State</h2><pre class="note" style="white-space:pre-wrap">'+
+    JSON.stringify({sanity:S.sanity,survivors:S.survivors,hollowed:S.hollowed,dead:S.dead,
+      inventory:S.inventory,flags:S.flags,chapter:S.chapter,visited:S.visited.length,
+      noise:+S.noise.toFixed(2),scares:S.scares},null,2)+
+    '</pre><div class="row"><button class="mini" onclick="closeModal()">back</button></div>');
+}
+
+/* ---------- top-bar controls ---------- */
+function syncSoundBtn(){
+  document.getElementById('btnMute').textContent = SETTINGS.muted ? 'sound off' : 'sound on';
+}
+document.getElementById('btnMute').onclick = ()=>{ Audio2.setMuted(!SETTINGS.muted); syncSoundBtn(); };
+document.getElementById('vol').oninput = e=>Audio2.setVolume(e.target.value/100);
+document.getElementById('btnMenu').onclick = menuPanel;
+window.closeModal = closeModal;
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){ modal.classList.contains('on') ? closeModal() : menuPanel(); return; }
+  if(e.key==='m'||e.key==='M'){ Audio2.setMuted(!SETTINGS.muted); syncSoundBtn(); return; }
+  if(modal.classList.contains('on')) return;
+  if(!document.getElementById('tscreen').classList.contains('gone')){
+    const i='123'.indexOf(e.key);
+    if(i>-1) document.getElementById('tchoices').children[i]?.click();
+    return;
+  }
+  const i='123'.indexOf(e.key);
+  if(i>-1) elChoices.children[i]?.click();
+  if(e.key===' '){ e.preventDefault(); skipType(); }
+});
+
+/* ---------- boot + graph validation ---------- */
+function boot(){
+  REG.clear();
+  CHAPTERS.forEach(c=>{
+    if(REG.has(c.id)) warn('duplicate chapter id "'+c.id+'"');
+    REG.set(c.id,c);
+  });
+  // every chapter needs exactly three doors, and every door must open
+  CHAPTERS.forEach(c=>{
+    if(!c.choices || c.choices.length!==3) warn(c.id+' has '+(c.choices?c.choices.length:0)+' choices (needs 3)');
+    (c.choices||[]).forEach((ch,i)=>{
+      const targets=[ch.next, ...(ch.nextIf||[]).map(b=>b.next)];
+      targets.forEach(t=>{
+        if(t==='@ENDING') return;
+        if(!t) warn(c.id+' choice '+(i+1)+' has no destination');
+        else if(!REG.has(t)) warn(c.id+' choice '+(i+1)+' → "'+t+'" does not exist');
+      });
+    });
+  });
+  if(!REG.has(SANITY_BREAK)) warn('SANITY_BREAK node "'+SANITY_BREAK+'" missing');
+  if(!REG.has(FALLBACK)) warn('FALLBACK node "'+FALLBACK+'" missing');
+  const reach=new Set(); (function walk(id){
+    if(!id||reach.has(id)||!REG.has(id)) return; reach.add(id);
+    REG.get(id).choices.forEach(c=>{
+      [c.next,...(c.nextIf||[]).map(b=>b.next)].forEach(t=>{
+        if(t==='@ENDING') ENDING_RULES.forEach(r=>walk(r.go)); else walk(t);
+      });
+    });
+  })('c1');
+  const orphans = CHAPTERS.filter(c=>!reach.has(c.id)).map(c=>c.id);
+  if(orphans.length) console.info('[cabin13] unreachable from c1 (fine if intentional): '+orphans.join(', '));
+  console.info('[cabin13] '+CHAPTERS.length+' chapters loaded, '+reach.size+' reachable, '+
+    warnings.length+' warning(s)');
+  drawHUD(); setNoise(0.06); whisperTick(); titleScreen(); syncSoundBtn();
+}
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   CABIN 13 — STORY DATA
+   Pure data. Nothing here touches the engine. Push chapters in any order.
+
+   SCHEMA
+   {
+     id:'c1', act:1, title:'…', text:'…',            // 2–5 sentences, present tense
+     danger:0.0-1.0,                                  // floor for VHS/static intensity
+     sound:'creak',                                   // optional on-arrival one-shot
+     scare:{art:'face', silence:900, delay:620},      // optional jump scare on arrival
+                                                      // art: face|hands|maw|eyes|tree
+     enter:{ hollow:['@NEXT'] },                      // effect applied on FIRST arrival only
+     enterIf:[ {cond:{aliveMin:3}, effect:{…}} ],     // first match, first arrival only
+     ending:'Survive & Escape',                       // marks a terminal chapter
+     choices:[ {                                      // EXACTLY THREE
+        label:'…',
+        tone:'safe' | 'danger' | 'possess',           // drives the screen reaction
+        sound:'heartbeat|static|whisper|growl|creak|drip|wood|breath|sting|chime',
+        effect:{ sanity:-6, add:['flare'], remove:[], set:{flag:true}, unset:[],
+                 noise:.08, kill:['@NEXT'], hollow:['Tobin'], save:['@HOLLOW'] },
+        effectIf:[ {cond:{…}, effect:{…}} ],          // first match also applies
+        next:'c2',
+        nextIf:[ {cond:{has:['hatchet']}, next:'c7'} ], // first match wins over next
+        restart:true                                   // reset state before routing (endings)
+     } ]
+   }
+
+   COND KEYS: flags{k:bool} has[] hasAny[] lacks[] sanityMin sanityMax aliveMin
+   aliveMax alive[] dead[] hollow[] hollowMin anyHollow visited[] not{…}
+   An empty cond {} always passes — use it as the last effectIf branch.
+
+   ADDING THE REST: drop a new CHAPTERS.push({…}) block anywhere below, give
+   each chapter an unused id, and point existing choices at it. The engine
+   validates on boot and logs every dangling link, duplicate id, wrong choice
+   count and unreachable node to the console (a badge appears bottom-left if
+   anything is wrong). c88 is deliberately unreachable by link — the engine
+   routes there when sanity hits zero.
+
+   TOKENS usable in title/text/label: {next} {hollow} {hollowed} {alive} {friend}
+   {lost} {n} {nf}.  In kill/hollow/save: '@NEXT' '@HOLLOW' '@ALLHOLLOW'.
+   Route to '@ENDING' to let ENDING_RULES pick the ending from accumulated flags.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────── ACT ONE — THE ROAD (c1–c14) ─────────────── */
+CHAPTERS.push(
+{
+  id:'c1', act:1, danger:0.06, title:'Mile Marker Thirteen',
+  text:`The engine dies at mile marker thirteen and the rain arrives like it has been waiting for exactly that. Tobin works the hazards; they paint the treeline orange, then black, then orange. Nobody has a single bar of signal. Ivy says the word <em>cabin</em> before the rest of you find the roofline in the pines.`,
+  choices:[
+    { label:'Walk toward the roofline. Five of you, one flashlight.', tone:'safe', sound:'creak',
+      effect:{ sanity:-2 }, next:'c2' },
+    { label:'Stay with the car. Wait the storm out.', tone:'safe', sound:'breath',
+      effect:{ sanity:-4, noise:0.04 }, next:'c3' },
+    { label:'Send Tobin and Dez ahead to scout it alone.', tone:'danger', sound:'heartbeat',
+      effect:{ sanity:-6, noise:0.06, set:{ splitEarly:true } }, next:'c4' }
+  ]
+},
+{
+  id:'c2', act:1, danger:0.08, title:'A Gate of Nailed Boards', sound:'creak',
+  text:`The drive is a mud seam between pines, closed by a gate of boards hammered at angles no carpenter would choose. Thirteen bent nails stand out of the crossbeam, every one of them pointing back down the road you came in on. Dez laughs at it. The laugh doesn't carry — the rain eats it about a foot from his mouth.`,
+  choices:[
+    { label:'Climb over. Do not touch the nails.', tone:'safe', effect:{ sanity:-1 }, next:'c5' },
+    { label:'Work one nail loose and pocket it.', tone:'danger', sound:'wood',
+      effect:{ sanity:-5, noise:0.05, add:['bent nail'], set:{ tookNail:true } }, next:'c5' },
+    { label:'Follow the fence line. There may be a gap.', tone:'safe',
+      effect:{ sanity:-3, set:{ sawFenceMarks:true } }, next:'c5' }
+  ]
+},
+{
+  id:'c3', act:1, danger:0.14, title:'What Passes the Windows',
+  text:`You wait. The wipers stop mid-sweep and the glass fills with grey. Something walks past the passenger side — tall, unhurried, wrong at the knees — and Mara's hand closes on your wrist hard enough to bruise. When the headlights stutter back there are no prints in the mud at all.`,
+  choices:[
+    { label:'Out. Everyone. Now.', tone:'danger', sound:'heartbeat',
+      effect:{ sanity:-8, noise:0.08 }, next:'c2' },
+    { label:'Lock the doors and count to a hundred.', tone:'danger', sound:'breath',
+      effect:{ sanity:-13, noise:0.12, set:{ counted:true } }, next:'c2' },
+    { label:'Lean on the horn until something answers it.', tone:'possess', sound:'growl',
+      effect:{ sanity:-10, noise:0.14, set:{ hornAnswered:true } }, next:'c4' }
+  ]
+},
+{
+  id:'c4', act:1, danger:0.16, title:'Two Sets of Prints',
+  text:`Tobin and Dez go up the drive with the only flashlight and the rain closes behind them like a curtain. When you follow, their prints double back and stop, and Dez is waiting at the gate in the dark with his coat off in the cold. He says Tobin is already inside. He says it in a voice that arrives a half-second after his mouth moves.`,
+  choices:[
+    { label:'Ask Dez what he saw out there.', tone:'safe', sound:'whisper',
+      effect:{ sanity:-4, set:{ dezOdd:true } }, next:'c5' },
+    { label:'Don’t ask. Just get to the cabin.', tone:'danger',
+      effect:{ sanity:-6, noise:0.05 }, next:'c5' },
+    { label:'Kneel and look at the second set of prints properly.', tone:'danger', sound:'static',
+      effect:{ sanity:-9, noise:0.1, set:{ sawPrints:true } }, next:'c5' }
+  ]
+},
+{
+  id:'c5', act:1, danger:0.1, title:'Cabin Thirteen', sound:'creak',
+  text:`The cabin sits low and black beneath the pines with a <em>13</em> carved above the door — cut deep, then cut again over the top of itself. No vehicle, no wire, no mailbox. Just a porch swing moving in a wind you cannot feel on your face. Ivy knocks, and inside, something sets a chair down.`,
+  choices:[
+    { label:'Knock again. Call out a hello.', tone:'safe', sound:'wood',
+      effect:{ sanity:-2, noise:0.03 }, next:'c6' },
+    { label:'Try the handle.', tone:'safe', effect:{ sanity:-1 }, next:'c6' },
+    { label:'Circle round to the back of the property.', tone:'safe',
+      effect:{ sanity:-2 }, next:'c7' }
+  ]
+},
+{
+  id:'c6', act:1, danger:0.12, title:'Unlocked',
+  text:`The door opens on its own weight, into a smell of cold ash and old tobacco. Five sets of boots leave five wet prints on floorboards that already carry a hundred. The chair you heard is upright in the middle of the room, turned to face the cellar door, and nothing is sitting in it.`,
+  choices:[
+    { label:'Turn the chair to face the wall.', tone:'safe', sound:'wood',
+      effect:{ set:{ chairTurned:true } }, next:'c8' },
+    { label:'Sit in it.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-9, noise:0.09, set:{ satInChair:true } }, next:'c8' },
+    { label:'Leave it exactly as it is.', tone:'safe', effect:{ sanity:-2 }, next:'c8' }
+  ]
+},
+{
+  id:'c7', act:1, danger:0.14, title:'The Woodshed',
+  text:`Behind the cabin, a lean-to with a split-log wall and a hatchet buried to the cheek in a stump. Beside it a wheelbarrow holds small animal skulls stacked jaw-up in rows, arranged the way a person arranges things they intend to count. The rain has washed them very, very clean.`,
+  choices:[
+    { label:'Take the hatchet.', tone:'safe', sound:'wood',
+      effect:{ add:['hatchet'], set:{ gotHatchet:true } }, next:'c8' },
+    { label:'Count the skulls.', tone:'danger', sound:'static',
+      effect:{ sanity:-7, noise:0.09, set:{ countedSkulls:true } }, next:'c8' },
+    { label:'Leave all of it. Go inside.', tone:'safe', effect:{ sanity:-1 }, next:'c6' }
+  ]
+},
+{
+  id:'c8', act:1, danger:0.12, title:'The Long Room',
+  text:`A stone fireplace, five chairs, and a wall of photographs where every single face has been scraped away with a thumbnail. The desk drawer gives up a brass key, a tin of rock salt, and a chalk stub worn down to a nub. Above the mantel, in careful painted letters: <em>WHAT IS READ ALOUD IS INVITED IN.</em>`,
+  choices:[
+    { label:'Light the fire. You are all soaked through.', tone:'safe', sound:'wood',
+      effect:{ sanity:6, set:{ fireLit:true } }, next:'c9' },
+    { label:'Empty the drawer into your pockets.', tone:'safe', sound:'drip',
+      effect:{ add:['brass key','rock salt','chalk'] }, next:'c9' },
+    { label:'Upstairs first. Find out what else is here.', tone:'safe', next:'c10' }
+  ]
+},
+{
+  id:'c9', act:1, danger:0.2, title:'The Storm Takes the Light', sound:'static',
+  text:`The single bulb browns out, returns the colour of weak tea, and dies. Whatever light is left makes the scraped-out faces on the wall seem to turn. Under the floorboards something drags itself the whole length of the room, unhurried, and stops directly beneath where you are standing.`,
+  choices:[
+    { label:'Stamp on the boards. Twice, hard.', tone:'danger', sound:'wood',
+      effect:{ sanity:-6, noise:0.11 }, next:'c11' },
+    { label:'Say nothing. Just listen.', tone:'safe', sound:'breath',
+      effect:{ sanity:-3, set:{ listened:true } }, next:'c11' },
+    { label:'Get everyone upstairs, away from the floor.', tone:'safe', next:'c10' }
+  ]
+},
+{
+  id:'c10', act:1, danger:0.16, title:'Four Beds, Five People',
+  text:`Two rooms, four beds, and one name cut into every headboard — <em>H. PIKE</em> — smaller each time, until the last is only scratches. Ivy turns up a road flare in a nightstand and a photograph of six people seated at a table that has five chairs. Through the window, the treeline stands noticeably closer than it did from the drive.`,
+  choices:[
+    { label:'Take the flare.', tone:'safe', effect:{ add:['flare'] }, next:'c11' },
+    { label:'Keep the photograph. Count the six again.', tone:'danger', sound:'static',
+      effect:{ sanity:-5, noise:0.07, set:{ keptPhoto:true } }, next:'c11' },
+    { label:'Draw the curtains and go back down.', tone:'safe',
+      effect:{ set:{ curtainsShut:true } }, next:'c11' }
+  ]
+},
+{
+  id:'c11', act:1, danger:0.24, title:'The Door Under the Stair', sound:'breath',
+  text:`There is a door beneath the staircase that is far too tall to be a cupboard. It carries three hasps, all of them fitted on the outside, and the wood around each one is scored by something that was pushing from within. Cold air breathes out of the seam. It smells like a coin held too long in a fist.`,
+  choices:[
+    { label:'The brass key from the desk.', tone:'safe', sound:'creak',
+      effectIf:[{ cond:{ lacks:['brass key'] }, effect:{ sanity:-6, noise:0.06 } }],
+      next:'c12' },
+    { label:'Take a blade to the hasps.', tone:'danger', sound:'wood',
+      effect:{ noise:0.06 },
+      effectIf:[{ cond:{ lacks:['hatchet'] }, effect:{ sanity:-8, noise:0.06 } }],
+      next:'c12' },
+    { label:'Let Dez pick it with wire off the porch swing.', tone:'safe', sound:'drip',
+      effect:{ sanity:-3, set:{ dezPicked:true } }, next:'c12' }
+  ]
+},
+{
+  id:'c12', act:1, danger:0.3, title:'The Cellar', sound:'drip',
+  text:`The steps go down further than the house is tall. Shelves of jars line both walls — teeth, hair, folded paper, and one jar of nothing at all, carefully labelled — and the dirt floor holds a chalk circle broken open at a single point. On the table at the centre sits a book bound in something with pores, and a crate of reel-to-reel tape.`,
+  choices:[
+    { label:'The shelf of jars.', tone:'danger', sound:'static',
+      effect:{ sanity:-6, noise:0.08, set:{ sawJars:true } }, next:'c13' },
+    { label:'The table. The book.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-9, noise:0.12, set:{ touchedLedger:true } }, next:'c13' },
+    { label:'The crate of tapes.', tone:'safe', sound:'creak',
+      effect:{ add:['tape player'] }, next:'c13' }
+  ]
+},
+{
+  id:'c13', act:1, danger:0.3, title:'What Pike Left Behind',
+  text:`The book has no title, only symbols pressed into the cover from the inside, and it is warm the way a hand is warm. The tapes are labelled A through E in a shaking hand; E says only <em>DON'T</em>. Ivy threads the player, Dez holds the unlit flare like a weapon, and Mara says the sensible thing that nobody chooses to hear.`,
+  choices:[
+    { label:'Carry the book up to the firelight.', tone:'safe', sound:'creak',
+      effect:{ add:['the Ledger'], set:{ ledgerUpstairs:true } }, next:'c14' },
+    { label:'Bring the tapes and the player up as well.', tone:'safe',
+      effect:{ add:['tape player','the Ledger'] }, next:'c14' },
+    { label:'Stay down here. It is warmer than the house.', tone:'danger', sound:'breath',
+      effect:{ sanity:-5, noise:0.08, set:{ stayedCellar:true } }, next:'c14' }
+  ]
+},
+{
+  id:'c14', act:1, danger:0.32, title:'Five Around a Table', sound:'heartbeat',
+  text:`Five of you, one book, five tapes, and a storm with no intention of ending. The rain on the roof has settled into a rhythm that is very nearly a language, and every one of you has stopped mentioning it. Tobin already has the book open at a page marked with a dried strip of skin. <span class="q">"It's Latin or something,"</span> he says. It isn't.`,
+  choices:[
+    { label:'Play tape A first. Learn something before you touch anything.', tone:'safe', sound:'static',
+      effect:{ sanity:2 }, next:'c15' },
+    { label:'Read the marked passage aloud yourself.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-10, noise:0.15, set:{ readByYou:true, youMarked:true } }, next:'c20' },
+    { label:'Let Tobin read it. Let him make a joke of it.', tone:'danger', sound:'growl',
+      effect:{ sanity:-6, noise:0.12, set:{ readByTobin:true } }, next:'c25' }
+  ]
+}
+);
+
+/* ─────────── ACT TWO — THE FIRST WORD (c15–c40) ───────────
+   Three entrances (tapes / you read / Tobin reads), each with its own
+   middle, all draining into the c30 barricade hub and the c35 hollowing. */
+CHAPTERS.push(
+{
+  id:'c15', act:2, danger:0.3, title:'Tape A — The Surveyor', sound:'static',
+  text:`Tape A is a dry, careful man dated eleven years back. He calls himself Halloran Pike, says he came up to survey the ridge for a timber outfit, and stayed because <span class="q">"the trees keep a ledger and the ledger is behind."</span> He explains, with the patience of someone who has stopped expecting to be believed, that the woods do not want their land back. They want the tally settled.`,
+  choices:[
+    { label:'Let it run to the end of the reel.', tone:'safe', effect:{ sanity:2 }, next:'c16' },
+    { label:'Ask the room whether anyone knows the name Pike.', tone:'safe', sound:'breath',
+      effect:{ sanity:3, set:{ askedAboutPike:true } }, next:'c16' },
+    { label:'Skip ahead. Put on C.', tone:'danger', sound:'static',
+      effect:{ sanity:-6, noise:0.08 }, next:'c17' }
+  ]
+},
+{
+  id:'c16', act:2, danger:0.32, title:'Tape B — Four Things That Hold',
+  text:`Pike is thinner on B, the way a voice gets when it has been talking to no one for a whole season. He says the passages are not spells, they are <em>addresses</em> — read one aloud and you have told something precisely where you are standing. Then he lists, very levelly, the four things that hold it back: salt, iron, the sealing verse, and a name said by somebody who loves you.`,
+  choices:[
+    { label:'Write all four of them down.', tone:'safe', sound:'drip',
+      effect:{ sanity:5, set:{ knowsFour:true } }, next:'c17' },
+    { label:'Tell Tobin to shut the book. Now, not in a minute.', tone:'safe',
+      effect:{ sanity:2 }, next:'c17' },
+    { label:'Put on C. You need to know how bad this gets.', tone:'danger', sound:'static',
+      effect:{ sanity:-4, noise:0.06 }, next:'c17' }
+  ]
+},
+{
+  id:'c17', act:2, danger:0.42, title:'Tape C — Somebody Reading', sound:'whisper',
+  text:`C is forty seconds of hiss, then Pike much closer to the microphone than a person's mouth can physically get. He is reading the marked passage — the same one open on your table — very slowly, and he is crying the entire way through it. On the second line, other voices come in underneath his. They are not adult voices.`,
+  choices:[
+    { label:'Stop the tape.', tone:'danger', sound:'wood', effect:{ sanity:-5, noise:0.07 }, next:'c18' },
+    { label:'Let it finish. All of it.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-11, noise:0.15 }, next:'c18' },
+    { label:'Read along under your breath. Just to feel the shape of it.', tone:'possess',
+      sound:'growl', effect:{ sanity:-15, noise:0.18, set:{ whisperedAlong:true, youMarked:true } }, next:'c18' }
+  ]
+},
+{
+  id:'c18', act:2, danger:0.6, title:'The Recorder Finishes Without You',
+  scare:{ art:'face', silence:1000, delay:560 },
+  text:`The player clicks. Both reels stop dead — and Pike's voice keeps coming out of the speaker. Except it isn't Pike now: it's Ivy's voice, then Dez's, then yours, working down the passage line by line, and the thirteenth line is spoken by all five of you in unison while all five of you sit there with your mouths shut.`,
+  choices:[
+    { label:'Rip the tape out of the machine.', tone:'danger', sound:'wood',
+      effect:{ sanity:-8, noise:0.1 }, next:'c19' },
+    { label:'Write down every word it just said. All thirteen lines.', tone:'safe', sound:'drip',
+      effect:{ sanity:-6, set:{ wroteWords:true } }, next:'c19' },
+    { label:'Answer it.', tone:'possess', sound:'growl',
+      effect:{ sanity:-17, noise:0.2, set:{ answeredIt:true, youMarked:true } }, next:'c19' }
+  ]
+},
+{
+  id:'c19', act:2, danger:0.55, title:'It Reads Itself',
+  text:`Nobody chose to read it. It has been read regardless — thirteen lines in your own five voices, with the door shut and the salt still sitting in its tin. Outside, the rain stops all at once, mid-fall, and for a long moment you can hear individual drops arriving. Then something very tall starts walking toward the house, taking its time about it.`,
+  choices:[
+    { label:'Barricade the front door.', tone:'safe', sound:'wood',
+      effect:{ set:{ readByTape:true } }, next:'c30' },
+    { label:'Get everyone into one room and count heads.', tone:'safe', sound:'heartbeat',
+      effect:{ sanity:-4, set:{ readByTape:true } }, next:'c30' },
+    { label:'Smash the player. Burn the tapes in the hearth.', tone:'danger', sound:'wood',
+      effect:{ sanity:-8, noise:0.08, remove:['tape player'],
+               set:{ readByTape:true, tapesDestroyed:true } }, next:'c30' }
+  ]
+},
+{
+  id:'c20', act:2, danger:0.45, title:'Your Own Voice, Early', sound:'whisper',
+  text:`You hear your voice say the first line a half-beat before you decide to say it. The letters don't resolve into language, they resolve into <em>instruction</em> — the way a hand knows a doorknob without consulting anybody. Ivy is telling you to stop. Your mouth is already most of the way through the second line, and the room has become extremely interested in you.`,
+  choices:[
+    { label:'Stop. Close your mouth mid-word.', tone:'safe', effect:{ sanity:-4 }, next:'c21' },
+    { label:'Finish it. All thirteen lines.', tone:'possess', sound:'growl',
+      effect:{ sanity:-15, noise:0.18, set:{ finishedPassage:true } }, next:'c23' },
+    { label:'Read it backwards, from the last line up.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-10, noise:0.12, set:{ readBackwards:true } }, next:'c24' }
+  ]
+},
+{
+  id:'c21', act:2, danger:0.44, title:'The Wind Stops',
+  text:`You stop. The room does not. The fire leans toward the book instead of up the chimney, and the rain on the roof pauses for exactly as long as it takes for all five of you to notice it pausing. Mara asks, very quietly, why the number thirteen is now cut into the tabletop under your hand.`,
+  choices:[
+    { label:'Show everyone your palm.', tone:'safe', sound:'heartbeat',
+      effect:{ sanity:-5, set:{ showedPalm:true } }, next:'c22' },
+    { label:'Cover it with the book and say nothing.', tone:'danger',
+      effect:{ sanity:-9, noise:0.09, set:{ liedAboutIt:true } }, next:'c22' },
+    { label:'Say the thirteenth line and see if that lets go of you.', tone:'possess', sound:'growl',
+      effect:{ sanity:-14, noise:0.16, set:{ finishedPassage:true } }, next:'c23' }
+  ]
+},
+{
+  id:'c22', act:2, danger:0.5, title:'The Treeline Answers',
+  text:`Something answers from the treeline. Not a word — the <em>shape</em> of a word, pressed into the air in the place a word would occupy. Every dog within five miles would be screaming, if there were any dogs. Dez opens the front door to look, because that is who Dez has always been.`,
+  choices:[
+    { label:'Haul him back inside and bolt it.', tone:'safe', sound:'wood',
+      effect:{ sanity:-3 }, next:'c30' },
+    { label:'Look past him at whatever is out there.', tone:'danger', sound:'static',
+      effect:{ sanity:-9, noise:0.12 }, next:'c30' },
+    { label:'Step out onto the porch beside him.', tone:'possess', sound:'growl',
+      effect:{ sanity:-13, noise:0.17, set:{ steppedOut:true } }, next:'c30' }
+  ]
+},
+{
+  id:'c23', act:2, danger:0.62, title:'The Thirteenth Line',
+  enter:{ set:{ youMarked:true }, noise:0.06 },
+  text:`You finish the thirteenth line and the house exhales. For one clean second you know the exact position of every living thing within a mile — four in this room, and one very large one moving between trunks with the patience of something that has never once had to hurry. It knows your name now. It liked the way you said its own.`,
+  choices:[
+    { label:'Shut the book. Lie about what you just felt.', tone:'danger',
+      effect:{ sanity:-8, noise:0.08, set:{ liedAboutIt:true } }, next:'c30' },
+    { label:'Tell them everything. Right now, out loud.', tone:'safe', sound:'breath',
+      effect:{ sanity:5, set:{ toldThem:true } }, next:'c30' },
+    { label:'Read the fourteenth line. There is a fourteenth line.', tone:'possess', sound:'growl',
+      effect:{ sanity:-19, noise:0.22, set:{ readFourteen:true } }, next:'c30' }
+  ]
+},
+{
+  id:'c24', act:2, danger:0.5, title:'Backwards Binds', sound:'drip',
+  text:`Read backwards the passage has a different architecture — a knot where the door was — and out in the dark something makes the sound of a chair being pushed back from a table. Pike's handwriting in the margin, which was not there ninety seconds ago, reads: <em>backwards binds, forwards invites, both of them leave a mark.</em> Your hand is cold to the elbow.`,
+  choices:[
+    { label:'Copy the margin note out before it changes again.', tone:'safe', sound:'drip',
+      effect:{ sanity:3, add:['torn page'], set:{ sealVerse:true } }, next:'c30' },
+    { label:'Read it backwards again. Slower.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-12, noise:0.15, set:{ boundOnce:true } }, next:'c30' },
+    { label:'Put the book down and step away from the table.', tone:'safe',
+      effect:{ sanity:-2 }, next:'c30' }
+  ]
+},
+{
+  id:'c25', act:2, danger:0.42, title:'Tobin Does the Voice', sound:'growl',
+  text:`Tobin does the voice — the ridiculous one that always gets Ivy laughing — and his pronunciation is eerily good for a man reading what he insists is gibberish. On the ninth line his register drops an octave and simply stays there. He keeps going. He looks <em>delighted</em>.`,
+  choices:[
+    { label:'Take the book out of his hands.', tone:'danger', sound:'wood',
+      effect:{ sanity:-6, noise:0.07 }, next:'c27' },
+    { label:'Laugh. It is Tobin. It is a joke.', tone:'danger',
+      effect:{ sanity:-10, noise:0.12 }, next:'c26' },
+    { label:'Look at the window instead of at him.', tone:'danger', sound:'static',
+      effect:{ sanity:-8, noise:0.1 }, next:'c28' }
+  ]
+},
+{
+  id:'c26', act:2, danger:0.5, title:'The Laugh That Outlasts',
+  text:`Everyone laughs, and then Tobin's laugh outlasts the rest by about nine seconds, which is an extraordinarily long time. He is laughing with his mouth closed. He finishes the remaining lines between breaths without once looking back down at the page.`,
+  choices:[
+    { label:'Grab him.', tone:'danger', sound:'wood', effect:{ sanity:-7, noise:0.08 }, next:'c27' },
+    { label:'Say his name.', tone:'safe', sound:'heartbeat',
+      effect:{ sanity:-2, set:{ namesWork:true } }, next:'c27' },
+    { label:'Get everyone else out of the room first.', tone:'safe',
+      effect:{ sanity:-4 }, next:'c28' }
+  ]
+},
+{
+  id:'c27', act:2, danger:0.58, title:'Wrong Hands',
+  text:`Tobin sets the book down with a care he has never shown any object in his life. His hands are on backwards at the wrist — not broken, just <em>fitted</em> the other way round — and he flexes them experimentally, pleased, a man trying on gloves. When he smiles, the smile does not stop where the corners of his mouth stop.`,
+  choices:[
+    { label:'Get behind Mara. Keep the table between you.', tone:'safe', sound:'heartbeat',
+      effect:{ sanity:-8, noise:0.06 }, next:'c29' },
+    { label:'Hit him with everything you have.', tone:'danger', sound:'wood',
+      effect:{ sanity:-12, noise:0.12 }, next:'c29' },
+    { label:'Say his name again. Louder.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-6, set:{ namesWork:true } }, next:'c29' }
+  ]
+},
+{
+  id:'c28', act:2, danger:0.62, title:'Six at the Table',
+  scare:{ art:'eyes', silence:950, delay:600 },
+  text:`You look at the window. The glass hands you the room back: the fire, the table, Tobin mid-sentence, and five people seated around it. You count the five in the reflection twice. Then you count the people actually in the room and get four, because Ivy went to the kitchen a minute ago and has not come back out of it.`,
+  choices:[
+    { label:'Go to the kitchen.', tone:'danger', sound:'creak',
+      effect:{ sanity:-8, noise:0.09 }, next:'c29' },
+    { label:'Do not turn around. Keep watching the reflection.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-13, noise:0.17 }, next:'c29' },
+    { label:'Put a chair through the window.', tone:'danger', sound:'wood',
+      effect:{ sanity:-6, noise:0.11, set:{ brokeWindow:true } }, next:'c29' }
+  ]
+},
+{
+  id:'c29', act:2, danger:0.66, title:'The First One Taken',
+  enter:{ hollow:['Tobin'], sanity:-10, noise:0.14 },
+  text:`Ivy is in the kitchen doorway with a dish towel folded neatly over her arm, and Tobin is at the table with his wrong hands flat on the wood, and only one of the two of them is still anybody. It's the joints that give him away — an elbow going the way an elbow shouldn't, casually, the way you'd cross your legs. The thing wearing Tobin says your name with obvious affection.`,
+  choices:[
+    { label:'Back into the cellar and bar it behind you.', tone:'safe', sound:'wood',
+      effect:{ sanity:-4 }, next:'c30' },
+    { label:'Take Ivy and run for the porch.', tone:'danger', sound:'heartbeat',
+      effect:{ sanity:-8, noise:0.08 }, next:'c30' },
+    { label:'Talk to it. Ask it what it came for.', tone:'possess', sound:'growl',
+      effect:{ sanity:-12, noise:0.15, set:{ spokeToIt:true } }, next:'c30' }
+  ]
+},
+{
+  id:'c30', act:2, danger:0.55, title:'Which Side of the Door',
+  text:`Whatever is left of this night, you are going to spend it deciding which side of a door to be on. {alive} are still themselves, as far as anyone can prove. The house has started making small adjustments — a doorway an inch narrower, a hallway a stride longer — and every one of you has silently agreed not to mention it.`,
+  choices:[
+    { label:'Salt every threshold in the house.', tone:'safe', sound:'drip',
+      nextIf:[{ cond:{ has:['rock salt'] }, next:'c31' }], next:'c32' },
+    { label:'Gather everyone in the long room. Chairs facing outward.', tone:'safe',
+      sound:'wood', next:'c33' },
+    { label:'Go back down for the book and the tapes.', tone:'danger', sound:'creak',
+      effect:{ sanity:-5, noise:0.07 }, next:'c34' }
+  ]
+},
+{
+  id:'c31', act:2, danger:0.4, title:'A Grey Line That Holds', sound:'drip',
+  text:`A line of grey across every threshold and windowsill, poured with a steadiness you did not know your hands had. It holds. You watch something come to the kitchen door, put a foot down onto the salt, and take it back the way you'd take a hand off a hot pan. Sanity is a small thing. A line that works is an enormous one.`,
+  choices:[
+    { label:'Double the line at the front door.', tone:'safe',
+      effect:{ sanity:6, set:{ groundSalted:true } }, next:'c35' },
+    { label:'Ring the five of you instead. Forget the house.', tone:'safe', sound:'breath',
+      effect:{ sanity:8, set:{ groundSalted:true, innerRing:true } }, next:'c35' },
+    { label:'Spend the last of it on the cellar hatch.', tone:'safe',
+      effect:{ sanity:3, set:{ groundSalted:true, cellarSalted:true } }, next:'c35' }
+  ]
+},
+{
+  id:'c32', act:2, danger:0.6, title:'Sugar Is Not Salt',
+  text:`There is no salt in your pockets. The kitchen offers a canister of sugar and a half-box of bicarbonate, and you pour both anyway, because doing something is a species of prayer. At the kitchen door, a bare foot comes down on the white line, and then keeps coming.`,
+  choices:[
+    { label:'Run for the desk drawer in the long room.', tone:'danger', sound:'heartbeat',
+      effect:{ sanity:-6, noise:0.06, add:['rock salt'] }, next:'c35' },
+    { label:'Put your shoulder in the door and hold it.', tone:'danger', sound:'wood',
+      effect:{ sanity:-11, noise:0.13 }, next:'c35' },
+    { label:'Step back. Let it in. See what it actually does.', tone:'possess', sound:'growl',
+      effect:{ sanity:-17, noise:0.19, set:{ letItIn:true } }, next:'c35' }
+  ]
+},
+{
+  id:'c33', act:2, danger:0.45, title:'Five Chairs Facing Out', sound:'heartbeat',
+  text:`Five chairs in a ring, backs together, each of you assigned a different wall. Mara runs a headcount every four minutes, and every time it takes her slightly longer than the last. At twenty to four she counts five, then counts again and still gets five, and looks at you with an expression that has gone somewhere past language.`,
+  choices:[
+    { label:'Take her shift. Make her sleep twenty minutes.', tone:'safe', sound:'breath',
+      effect:{ sanity:7, set:{ maraRested:true } }, next:'c35' },
+    { label:'Count them yourself.', tone:'danger', sound:'static',
+      effect:{ sanity:-6, noise:0.08 }, next:'c35' },
+    { label:'Have everyone say their own name aloud, in turn, round the ring.', tone:'safe',
+      effect:{ sanity:4, set:{ namesWork:true } }, next:'c35' }
+  ]
+},
+{
+  id:'c34', act:2, danger:0.58, title:'Pike in the Margins',
+  text:`You take the book up to the landing where the light is worst and read Pike's margins instead of the text itself. He has written one instruction four times in four languages, and then, at the bottom, in failing English: <em>the verse is on the page i tore out. it is in the well.</em> Under that, a drawing of the well. Under <em>that</em>, a drawing of what is in it.`,
+  choices:[
+    { label:'Memorise the drawing of the well.', tone:'safe', sound:'drip',
+      effect:{ sanity:-4, add:['the Ledger'], set:{ knowsWell:true } }, next:'c35' },
+    { label:'Tear the marked page out and pocket it.', tone:'danger', sound:'wood',
+      effect:{ sanity:-8, noise:0.1, add:['the Ledger'], set:{ pageTorn:true } }, next:'c35' },
+    { label:'Read one more line. Just one. Just to hear it.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-14, noise:0.17, add:['the Ledger'], set:{ youMarked:true } }, next:'c35' }
+  ]
+},
+{
+  id:'c35', act:2, danger:0.7, title:'Someone Here Is Already Gone',
+  enter:{ hollow:['@NEXT'], sanity:-12, noise:0.14 }, sound:'breath',
+  text:`You notice it the way you notice a loose tooth. {hollow} has been standing in one place for six minutes without blinking, wearing an expression assembled out of the correct parts in nearly the correct order. When {hollow} turns to look at you it arrives in two separate movements, like a lamp being aimed. The voice is a very good copy made in the wrong throat.`,
+  choices:[
+    { label:'Restrain them. Lamp cord, belts, anything in reach.', tone:'danger', sound:'wood',
+      effect:{ sanity:-5, noise:0.05 }, next:'c36' },
+    { label:'Get out of the room and put a door between you.', tone:'danger', sound:'heartbeat',
+      effect:{ sanity:-7, noise:0.09 }, next:'c37' },
+    { label:'Say their name. Their real one, the whole thing.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-3 }, next:'c38' }
+  ]
+},
+{
+  id:'c36', act:2, danger:0.6, title:'Four Wraps at the Wrist',
+  text:`Four turns of lamp cord at the wrists, four at the ankles, and a kitchen chair never designed for any of this. {hollow} lets you do it. Watches you do it, head tipped, interested in the knots. Then thanks you — in a voice that learned the word by listening to you use it on somebody else.`,
+  choices:[
+    { label:'Gag them. You cannot listen to that for five hours.', tone:'safe', sound:'wood',
+      effect:{ sanity:2, set:{ bound:true } }, next:'c39' },
+    { label:'Sit with them anyway. Somebody should.', tone:'safe', sound:'breath',
+      effect:{ sanity:-4, set:{ bound:true, satWithThem:true } }, next:'c39' },
+    { label:'Ask it questions while it is tied to a chair.', tone:'possess', sound:'growl',
+      effect:{ sanity:-10, noise:0.13, set:{ bound:true, spokeToIt:true } }, next:'c39' }
+  ]
+},
+{
+  id:'c37', act:2, danger:0.78, title:'The Door Does Not Hold',
+  scare:{ art:'hands', silence:1000, delay:520 },
+  text:`You get the door shut and your back against it, and for four entire seconds that is enough. Then the wood bows inward around the shape of a hand — and the hand is on your side of the door without the door ever having opened. Fingers find your collar almost gently, and lift.`,
+  choices:[
+    { label:'Twist out of the coat. Take the stairs.', tone:'danger', sound:'wood',
+      effect:{ sanity:-12, noise:0.1 }, next:'c39' },
+    { label:'Let go of the door and go for a blade.', tone:'danger', sound:'wood',
+      effect:{ sanity:-8 },
+      effectIf:[
+        { cond:{ lacks:['hatchet'], sanityMax:10 }, effect:{ kill:['You'] } },
+        { cond:{ lacks:['hatchet'] }, effect:{ sanity:-10, noise:0.14, kill:['@NEXT'] } }
+      ],
+      nextIf:[{ cond:{ flags:{ youDead:true } }, next:'@ENDING' }], next:'c39' },
+    { label:'Scream for Mara.', tone:'safe', sound:'heartbeat',
+      effect:{ sanity:-6, set:{ maraSaved:true } }, next:'c39' }
+  ]
+},
+{
+  id:'c38', act:2, danger:0.64, title:'Names Work. A Little.',
+  text:`You say the name — the whole name, the one three people alive know — and the thing wearing {hollow} flinches like a struck bell. For one second there is somebody home behind the eyes: frightened, and apologising. Then the second is over, the smile comes back on crooked, and you understand that a name is a tool and not a cure.`,
+  choices:[
+    { label:'Keep saying it. Buy the room some time.', tone:'safe', sound:'breath',
+      effect:{ sanity:5, set:{ namesWork:true } }, next:'c39' },
+    { label:'Chalk all five of your names on the wall where it can read them.', tone:'safe',
+      sound:'drip', effect:{ sanity:2, set:{ namesWall:true, namesWork:true } }, next:'c39' },
+    { label:'Ask it for its name in return.', tone:'possess', sound:'growl',
+      effect:{ sanity:-12, noise:0.15, set:{ knowsItsName:true } }, next:'c39' }
+  ]
+},
+{
+  id:'c39', act:2, danger:0.55, title:'What Pike Wrote Down', sound:'static',
+  text:`Whatever survives of Pike's instructions — tape D if the reels are intact, his margins if they aren't — amounts to a list. Iron at four corners. Salt at every mouth of the house. The sealing verse said whole and unhurried, start to finish, by one voice. And a vessel that <em>agrees</em> to it. <span class="q">"It can't be killed and it can't be reasoned with,"</span> he says. <span class="q">"It can be given a smaller room."</span>`,
+  choices:[
+    { label:'Write the verse out. Every syllable, in order.', tone:'safe', sound:'drip',
+      effect:{ sanity:6, set:{ sealVerse:true } }, next:'c40' },
+    { label:'Find the iron. Nails, hinges, the fire irons, anything.', tone:'safe', sound:'wood',
+      effect:{ sanity:3, add:['iron nails'] }, next:'c40' },
+    { label:'Play tape E. The one labelled DON’T.', tone:'danger', sound:'static',
+      effect:{ sanity:-14, noise:0.19, set:{ heardTapeE:true, sealVerse:true } }, next:'c40' }
+  ]
+},
+{
+  id:'c40', act:2, danger:0.55, title:'Five Hours Until Light', sound:'heartbeat',
+  text:`It is twelve minutes past one and sunrise is a rumour five hours out. {alive} are still human by every test you can think of; {hollowed} is not. The house has stopped pretending its hallways are the length they were yesterday, and something is walking the perimeter at a steady, unbothered pace, counting. It is not counting trees.`,
+  choices:[
+    { label:'Split up. Search the property while it is still dark.', tone:'danger',
+      sound:'creak', effect:{ noise:0.05 }, next:'c41' },
+    { label:'Stay together. Sit it out until the light comes.', tone:'safe', sound:'breath',
+      effect:{ sanity:2 }, next:'c42' },
+    { label:'The barn. There was a truck under a tarp.', tone:'safe', sound:'wood', next:'c43' }
+  ]
+}
+);
+
+/* ─────────── ACT THREE — THE SPREAD (c41–c63) ───────────
+   Three item-bearing locations (barn / well / attic) that all drain into the
+   c56 hollowing hub, then the cure attempt, then the route fork at c63. */
+CHAPTERS.push(
+{
+  id:'c41', act:3, danger:0.5, title:'The Property, Divided',
+  text:`You split up the way people split up when nobody wants to say the actual reason. Whoever is tied stays tied; whoever is left over gets the hallway. The rain has come back thinner and colder, and the yard holds three things worth looking at — a barn, a well, and an attic hatch under the eaves that has no business being reachable from outside.`,
+  choices:[
+    { label:'The barn.', tone:'safe', sound:'wood', next:'c44' },
+    { label:'The well.', tone:'danger', sound:'drip', effect:{ noise:0.04 }, next:'c48' },
+    { label:'The attic hatch.', tone:'safe', sound:'creak', next:'c52' }
+  ]
+},
+{
+  id:'c42', act:3, danger:0.58, title:'The Waiting Room', sound:'breath',
+  text:`You sit. Nobody searches anything. For ninety minutes the house is only a house, which turns out to be worse, because it means the house can be patient too. Eventually you notice that all of you have been listening to the same sound for a while without saying so: a soft, wet counting from under the floorboards. It has got past thirty.`,
+  choices:[
+    { label:'Break the silence. Talk about anything at all.', tone:'safe',
+      effect:{ sanity:6, set:{ talkedAll:true } }, next:'c56' },
+    { label:'Sleep in shifts. Two hours each, hands where they can be seen.', tone:'safe',
+      effect:{ sanity:9, set:{ slept:true } }, next:'c56' },
+    { label:'Go outside to the well and count along with it.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-14, noise:0.18 }, next:'c48' }
+  ]
+},
+{
+  id:'c43', act:3, danger:0.44, title:'The Truck Under the Tarp',
+  text:`The tarp comes off a flatbed that has been sitting here since before any of you could drive. Tyres soft but holding, keys in the visor the way country people leave keys, and the bed half full of rainwater and something's ribs. It will start. You can feel that it will start, the same way you can feel that a strange dog is friendly.`,
+  choices:[
+    { label:'Try it right now.', tone:'safe', sound:'wood',
+      effect:{ add:['truck keys'] }, next:'c46' },
+    { label:'Search the rest of the barn first.', tone:'safe',
+      effect:{ add:['truck keys'] }, next:'c44' },
+    { label:'Look properly at what is lying in the bed.', tone:'danger', sound:'static',
+      effect:{ sanity:-7, noise:0.09, add:['truck keys'] }, next:'c44' }
+  ]
+},
+{
+  id:'c44', act:3, danger:0.52, title:'The Barn', sound:'creak',
+  text:`The barn smells of diesel and old blood in roughly equal measure, and somebody has written across the inside of the door in tar: <em>THIRTEEN AND THEN IT STOPS.</em> Along the back wall, a jerrycan, a coil of rope, and four stalls with their gates wired shut from the outside. Up in the loft, something shifts its weight and settles again.`,
+  choices:[
+    { label:'Take the jerrycan.', tone:'safe', sound:'wood', next:'c45' },
+    { label:'Get the truck running.', tone:'safe', sound:'wood',
+      effect:{ add:['truck keys'] }, next:'c46' },
+    { label:'Open the stalls.', tone:'danger', sound:'creak',
+      effect:{ noise:0.06 }, next:'c47' }
+  ]
+},
+{
+  id:'c45', act:3, danger:0.5, title:'Four Gallons',
+  text:`Four gallons, and it sloshes with the specific heaviness of a thing that will absolutely burn. You take the rope as well, and a hand-crank torch that gives about nine seconds of light for every twenty of cranking. On your way out you notice the tar writing has changed. <em>THIRTEEN AND THEN IT STOPS</em> now reads <em>TWELVE.</em>`,
+  choices:[
+    { label:'Count your party. Out loud. Twice.', tone:'danger', sound:'heartbeat',
+      effect:{ sanity:-8, noise:0.08, add:['kerosene','rope'] }, next:'c56' },
+    { label:'Say nothing about it to anybody.', tone:'danger',
+      effect:{ sanity:-6, add:['kerosene','rope'], set:{ liedAboutIt:true } }, next:'c56' },
+    { label:'Write FIVE underneath it in the tar.', tone:'safe', sound:'drip',
+      effect:{ sanity:4, add:['kerosene','rope'], set:{ wroteBack:true } }, next:'c56' }
+  ]
+},
+{
+  id:'c46', act:3, danger:0.56, title:'The Engine Turns Over', sound:'wood',
+  text:`It catches on the fourth try, and for eight seconds the sound of a working engine is the most beautiful thing that has ever happened to anyone. Then the headlights come up, and there are people standing in the treeline — not close, not moving, spaced at even intervals like fence posts. You count them. There are thirteen. Two of them are wearing your friends' coats.`,
+  choices:[
+    { label:'Reverse out now, with whoever is already in the cab.', tone:'danger',
+      sound:'heartbeat', effect:{ sanity:-10, noise:0.1, add:['truck keys'],
+      set:{ truckWorks:true, triedToLeave:true } }, next:'c56' },
+    { label:'Kill the lights. Kill the engine. Do not move.', tone:'safe', sound:'breath',
+      effect:{ sanity:-4, add:['truck keys'], set:{ truckWorks:true } }, next:'c56' },
+    { label:'Leave it running and go back for the others.', tone:'safe',
+      effect:{ sanity:-2, add:['truck keys'], set:{ truckWorks:true, engineRunning:true } },
+      next:'c56' }
+  ]
+},
+{
+  id:'c47', act:3, danger:0.8, title:'What Was Wired In',
+  scare:{ art:'maw', silence:1000, delay:600 },
+  text:`The wire comes away easier than wire should. In the first three stalls: deer. Not killed and left — <em>arranged</em>, upright, held in shape with baling twine into forms that are trying very hard to be human and failing badly at the knees. The fourth stall holds a chair. The chair has been used recently. It is facing the door you just opened.`,
+  choices:[
+    { label:'Get out of the barn.', tone:'danger', sound:'heartbeat',
+      effect:{ sanity:-12, noise:0.1 }, next:'c56' },
+    { label:'Sit in the chair.', tone:'possess', sound:'growl',
+      effect:{ sanity:-20, noise:0.22, set:{ satInChair2:true, youMarked:true } }, next:'c56' },
+    { label:'Cut the deer down. All of them.', tone:'safe', sound:'wood',
+      effect:{ sanity:-8, set:{ cutThemDown:true } }, next:'c56' }
+  ]
+},
+{
+  id:'c48', act:3, danger:0.6, title:'The Well', sound:'drip',
+  text:`The well is fieldstone, waist-high, and noticeably warmer than the air around it. Someone has driven iron spikes into the mortar the whole way round the lip, points angled inward, which tells you exactly which direction the trouble was expected from. Your light does not reach the bottom. Something down there is breathing in a rhythm that matches yours precisely.`,
+  choices:[
+    { label:'Lower the light on the rope.', tone:'safe', sound:'creak', next:'c49' },
+    { label:'Answer it.', tone:'possess', sound:'whisper', effect:{ noise:0.08 }, next:'c50' },
+    { label:'Walk away from the well.', tone:'safe', effect:{ sanity:2 }, next:'c51' }
+  ]
+},
+{
+  id:'c49', act:3, danger:0.64, title:'The Page in the Mortar',
+  text:`Thirty feet down the light finds water, and standing up in the water, a great deal of somebody. Wedged into the mortar just above the waterline is an oilcloth packet — Pike, who clearly understood he was not coming back up — and inside it a single page torn out of the book. Thirteen lines in a language your mouth already knows, and above them, underlined twice: <em>SAY IT ALL OR NOT AT ALL.</em>`,
+  choices:[
+    { label:'Take the page. Read none of it.', tone:'safe', sound:'drip',
+      effect:{ sanity:4, add:['torn page'], set:{ sealVerse:true } }, next:'c56' },
+    { label:'Read the first line, just to be certain it is the right page.', tone:'possess',
+      sound:'whisper', effect:{ sanity:-11, noise:0.14, add:['torn page'],
+      set:{ sealVerse:true, youMarked:true } }, next:'c56' },
+    { label:'Take the page and let the light go.', tone:'safe',
+      effect:{ sanity:-4, add:['torn page'], set:{ sealVerse:true } }, next:'c56' }
+  ]
+},
+{
+  id:'c50', act:3, danger:0.74, title:'It Answers in Your Voice',
+  text:`You say hello into the well, and the well says hello back in your voice — instantly, without the small delay a real echo requires. You try your name. It gets your name exactly right. Then it begins telling you things about yourself that you have never told anybody, one after another, in the tone of somebody reading from a list they are pleased with.`,
+  choices:[
+    { label:'Stop listening. Hands over your ears. Walk.', tone:'safe', sound:'breath',
+      effect:{ sanity:-8, noise:0.08 }, next:'c56' },
+    { label:'Let it finish the list.', tone:'possess', sound:'growl',
+      effect:{ sanity:-18, noise:0.2, set:{ wellSpoke:true, youMarked:true } }, next:'c56' },
+    { label:'Ask it which of your friends is next.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-14, noise:0.16, set:{ wellSpoke:true, knowsNext:true } }, next:'c56' }
+  ]
+},
+{
+  id:'c51', act:3, danger:0.56, title:'Footsteps at Your Pace',
+  text:`You walk away from the well, which is the single most sensible thing anybody has done all night. Twenty yards on, you register that the footsteps behind you have been keeping perfect time with yours — and that nobody came out here with you. When you turn there is only the well, and the rain, and the sound of a bucket being set down very carefully on stone.`,
+  choices:[
+    { label:'Do not run. Walk to the house.', tone:'safe', sound:'heartbeat',
+      effect:{ sanity:-4, set:{ didNotRun:true } }, next:'c56' },
+    { label:'Run.', tone:'danger', sound:'heartbeat',
+      effect:{ sanity:-9, noise:0.11 }, next:'c56' },
+    { label:'Go back and look into the well after all.', tone:'danger', sound:'drip',
+      effect:{ sanity:-6 }, next:'c49' }
+  ]
+},
+{
+  id:'c52', act:3, danger:0.52, title:'The Attic Pike Slept In', sound:'creak',
+  text:`The hatch is on the outside of the house, under the eaves, reachable only by standing on the woodpile — which is how you know Pike used it constantly. Inside: a mattress, thirty-one tally marks, a coffee tin of iron nails, a chalk circle drawn nine times over the top of itself, and a shard of mirror propped up facing the hatch. The circle has a gap in it. The gap has been left open deliberately.`,
+  choices:[
+    { label:'Take the nails.', tone:'safe', sound:'wood', next:'c53' },
+    { label:'Take the mirror shard.', tone:'safe', sound:'drip', next:'c54' },
+    { label:'Read the symbols around the circle.', tone:'danger', sound:'whisper',
+      effect:{ noise:0.06 }, next:'c55' }
+  ]
+},
+{
+  id:'c53', act:3, danger:0.5, title:'Iron at the Corners',
+  text:`Coffin nails, hand-forged, each one long enough to constitute a decision. There is a hammer under the mattress with something dark worked deep into the grain of the handle. On the wall beside the tally marks, in pencil: <em>THIRTY-ONE NIGHTS. IRON AT THE CORNERS. IT CANNOT CROSS ITS OWN NAME.</em>`,
+  choices:[
+    { label:'Take the hammer as well.', tone:'safe', sound:'wood',
+      effect:{ add:['iron nails','hammer'], sanity:3 }, next:'c56' },
+    { label:'Count the tally marks. All thirty-one.', tone:'danger', sound:'static',
+      effect:{ sanity:-6, noise:0.07, add:['iron nails'] }, next:'c56' },
+    { label:'Lie down on the mattress. Ten minutes. Only ten.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-12, noise:0.15, add:['iron nails'] }, next:'c56' }
+  ]
+},
+{
+  id:'c54', act:3, danger:0.62, title:'The Glass Shows Who Is Empty',
+  text:`The shard is backed with something that is not silver, and in it the attic is the same attic with one difference — the doorway behind you stands open in the glass and shut in the room. You angle it down through the hatch at the yard, where the others are waiting in the rain for you to come back. In the mirror, one of them has no face at all. Just a smooth front, with a mouth added afterwards.`,
+  choices:[
+    { label:'Memorise which one it is. Say nothing.', tone:'safe', sound:'breath',
+      effect:{ sanity:-8, add:['mirror shard'], set:{ knowsWhoEmpty:true } }, next:'c56' },
+    { label:'Climb down and hold the glass up to their face.', tone:'danger', sound:'static',
+      effect:{ sanity:-12, noise:0.12, add:['mirror shard'] }, next:'c56' },
+    { label:'Break the mirror. You do not want to know.', tone:'danger', sound:'wood',
+      effect:{ sanity:-6, noise:0.13 }, next:'c56' }
+  ]
+},
+{
+  id:'c55', act:3, danger:0.6, title:'A Cage, Not a Shield',
+  text:`The symbols around the circle are not protective. Read in the correct order they are a hinge, and a latch, and a very small room. Pike did not draw this to keep something out — he drew it to hold something still while he worked on it. The gap is where the person doing the work stands. Whatever goes into that circle does not come back out the way it went in.`,
+  choices:[
+    { label:'Copy the circle onto paper. Exactly, every mark.', tone:'safe', sound:'drip',
+      effect:{ sanity:3, add:['chalk'], set:{ knowsCircle:true } }, next:'c56' },
+    { label:'Close the gap and see what that does.', tone:'danger', sound:'static',
+      effect:{ sanity:-10, noise:0.13 }, next:'c56' },
+    { label:'Stand in the gap.', tone:'possess', sound:'growl',
+      effect:{ sanity:-16, noise:0.19, set:{ stoodInGap:true, youMarked:true } }, next:'c56' }
+  ]
+},
+{
+  id:'c56', act:3, danger:0.75, title:'They Breathe in Step',
+  enterIf:[
+    { cond:{ aliveMin:3 }, effect:{ hollow:['@NEXT'], sanity:-10, noise:0.12 } },
+    { cond:{}, effect:{ sanity:-14, noise:0.16 } }
+  ],
+  sound:'breath',
+  text:`This one happens without any ceremony at all. {hollowed} are standing together at the end of the hallway, not speaking, shoulders touching, breathing in step — and it is the breathing in step that takes the strength out of your legs. The house smells of hot pennies now. Whatever they are turning into, they have decided to turn into it together.`,
+  choices:[
+    { label:'Test everybody. Glass to every face, including your own.', tone:'safe', sound:'drip',
+      nextIf:[{ cond:{ has:['mirror shard'] }, next:'c57' }], next:'c58' },
+    { label:'Accuse the quietest one in the room.', tone:'danger', sound:'heartbeat',
+      effect:{ noise:0.06 }, next:'c58' },
+    { label:'Put yourself between them and the door.', tone:'danger', sound:'wood',
+      effect:{ noise:0.05 }, next:'c59' }
+  ]
+},
+{
+  id:'c57', act:3, danger:0.66, title:'The Mirror Test',
+  text:`You go round the room holding a piece of broken glass up to the faces of people you have known for nine years. The ones who are still themselves look back and hate you a little for asking. In the others, the glass gives you a smooth front with the features arranged on top afterwards, like magnets on a fridge door. Nobody objects to being tested. That is the detail you will think about for the rest of your life.`,
+  choices:[
+    { label:'Mark the empty ones. Chalk, on the forehead, where you can see it.', tone:'safe',
+      sound:'drip', effect:{ sanity:5, set:{ markedEmpty:true } }, next:'c60' },
+    { label:'Say nothing. Quietly move the living ones into one room.', tone:'safe',
+      effect:{ sanity:-4, set:{ separated:true } }, next:'c60' },
+    { label:'Show all of them what you just saw.', tone:'danger', sound:'static',
+      effect:{ sanity:-8, noise:0.1 }, next:'c60' }
+  ]
+},
+{
+  id:'c58', act:3, danger:0.82, title:'The Wrong One',
+  scare:{ art:'tree', silence:1050, delay:640 },
+  text:`You pick the quiet one. You say it out loud with your hand already on the haft — and the room turns to look at somebody who is still completely a person. Meanwhile, in the doorway you have had your back to this whole time, the actually empty one has been standing near enough to touch. Its head is tipped right over onto its shoulder, the way you would hold a phone.`,
+  choices:[
+    { label:'Swing.', tone:'danger', sound:'wood',
+      effect:{ sanity:-10, noise:0.1 },
+      effectIf:[{ cond:{ lacks:['hatchet'] }, effect:{ sanity:-8, noise:0.08 } }], next:'c60' },
+    { label:'Apologise to the one you accused. Mean it.', tone:'safe', sound:'breath',
+      effect:{ sanity:4, set:{ apologised:true } }, next:'c60' },
+    { label:'Do not move at all.', tone:'possess', sound:'growl',
+      effect:{ sanity:-14, noise:0.17 }, next:'c60' }
+  ]
+},
+{
+  id:'c59', act:3, danger:0.78, title:'Arithmetic You Did Wrong',
+  text:`You get between them and the door, which is brave, and is also arithmetic you have done badly. Something takes your arm and turns it in a direction arms are not built to go, unhurried, the way a person winds a clock. You hear the sound it makes before you feel it. Then you feel it.`,
+  choices:[
+    { label:'Stay on your feet.', tone:'danger', sound:'wood',
+      effect:{ sanity:-10, set:{ injured:true } }, next:'c60' },
+    { label:'Go down and stay down. Play dead.', tone:'danger', sound:'heartbeat',
+      effect:{ sanity:-14, noise:0.1, set:{ injured:true, playedDead:true } }, next:'c60' },
+    { label:'Let it keep hold of you and look it in the face.', tone:'possess', sound:'growl',
+      effect:{ sanity:-18, noise:0.2, set:{ injured:true, lookedAtIt:true, youMarked:true } },
+      effectIf:[{ cond:{ sanityMax:8, hollowMin:2 }, effect:{ kill:['You'] } }],
+      nextIf:[{ cond:{ flags:{ youDead:true } }, next:'@ENDING' }], next:'c60' }
+  ]
+},
+{
+  id:'c60', act:3, danger:0.7, title:'The Method, Attempted', sound:'heartbeat',
+  text:`Pike's method, then. Salt in a ring. Iron at four points. The verse said whole, in one breath, by somebody who means every syllable. And the name, said by someone who loves them. You have some of that list. The thing in the ring watches you set it out with the polite interest of a guest at somebody else's religion.`,
+  choices:[
+    { label:'Do it precisely the way Pike wrote it down.', tone:'possess', sound:'chime',
+      effectIf:[
+        { cond:{ has:['rock salt','iron nails'], flags:{ sealVerse:true } },
+          effect:{ save:['@HOLLOW'], sanity:10, set:{ lastCureOK:true, curedSomeone:true } } },
+        { cond:{}, effect:{ sanity:-12, noise:0.12, kill:['@HOLLOW'],
+          unset:['lastCureOK'], set:{ cureFailed:true } } }
+      ],
+      nextIf:[{ cond:{ flags:{ lastCureOK:true } }, next:'c61' }], next:'c62' },
+    { label:'Do it wrong, fast, right now, with whatever is to hand.', tone:'possess',
+      sound:'growl',
+      effectIf:[
+        { cond:{ flags:{ sealVerse:true, namesWork:true } },
+          effect:{ save:['@HOLLOW'], sanity:4, noise:0.08, set:{ lastCureOK:true, curedSomeone:true } } },
+        { cond:{}, effect:{ sanity:-16, noise:0.17, kill:['@HOLLOW'],
+          unset:['lastCureOK'], set:{ cureFailed:true } } }
+      ],
+      nextIf:[{ cond:{ flags:{ lastCureOK:true } }, next:'c61' }], next:'c62' },
+    { label:'Do not try it. Keep them tied and wait for the sun.', tone:'safe', sound:'breath',
+      effect:{ sanity:-2, set:{ noCure:true } }, next:'c63' }
+  ]
+},
+{
+  id:'c61', act:3, danger:0.5, title:'It Comes Out Through the Mouth',
+  text:`It comes out through the mouth, which is worse than you had let yourself imagine and takes considerably longer. What is left in the chair afterwards is somebody you know: soaked, twenty pounds lighter than they were four hours ago, weeping, and entirely themselves. The ring of salt has gone black. Whatever came out of them is loose in the house now, and no longer has anywhere convenient to be.`,
+  choices:[
+    { label:'Get them warm. Get them armed.', tone:'safe', sound:'breath',
+      effect:{ sanity:6 }, next:'c63' },
+    { label:'Do it again for the next one.', tone:'possess', sound:'chime',
+      nextIf:[{ cond:{ anyHollow:true }, next:'c60' }], next:'c63' },
+    { label:'Ask them what it was like in there.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-10, noise:0.1, set:{ heardFromInside:true } }, next:'c63' }
+  ]
+},
+{
+  id:'c62', act:3, danger:0.8, title:'It Does Not Come Out',
+  text:`The verse comes apart in your mouth somewhere around the ninth line — a word missing, or a word that will not be said by a living throat — and the ring breaks. What was in the chair stops being anybody at all, in stages, and what is left when the stages finish is neither a person nor moving. You did that. The room is very quiet about it afterwards.`,
+  choices:[
+    { label:'Try again with the next one.', tone:'possess', sound:'chime',
+      nextIf:[{ cond:{ anyHollow:true }, next:'c60' }], next:'c63' },
+    { label:'Stop. No more attempts tonight.', tone:'safe',
+      effect:{ sanity:-6, set:{ noCure:true } }, next:'c63' },
+    { label:'Sit down on the floor where you are.', tone:'danger', sound:'breath',
+      effect:{ sanity:-12, noise:0.08 },
+      effectIf:[{ cond:{ sanityMax:16, anyHollow:true }, effect:{ kill:['You'] } }],
+      nextIf:[{ cond:{ flags:{ youDead:true } }, next:'@ENDING' }], next:'c63' }
+  ]
+},
+{
+  id:'c63', act:3, danger:0.72, title:'Three Hours of Dark Left', sound:'heartbeat',
+  text:`Three hours of dark left, {n} of you upright, and the thing outside has stopped walking the perimeter because it no longer needs to. On the table: a warm book, a tin of salt, and every bad option laid out neatly like cutlery. Somebody says the quiet thing out loud — that whatever you pick has to be finished before the light, because after tonight it will have had all night to learn you.`,
+  choices:[
+    { label:'Burn it. The book, the tapes, the house, all of it.', tone:'danger', sound:'wood',
+      effect:{ set:{ choseBurn:true } }, next:'c64' },
+    { label:'Reseal it the way Pike did. Give it a smaller room.', tone:'safe', sound:'chime',
+      effect:{ set:{ choseSeal:true } }, next:'c71' },
+    { label:'Stop fighting it. Open the book and let it in.', tone:'possess', sound:'growl',
+      effect:{ sanity:-12, noise:0.16, set:{ choseHost:true } }, next:'c81' }
+  ]
+}
+);
+
+/* ─────────── ACT FOUR — BEFORE DAWN (c64–c91) ───────────
+   Three routes off c63:  BURN c64–c70  ·  SEAL c71–c80  ·  HOST c81–c87.
+   c88 is the sanity-collapse node (entered by the engine, not by a link).
+   c89–c91 are the shared walk-out that every route can fall into.        */
+CHAPTERS.push(
+/* ---- BURN ---- */
+{
+  id:'c64', act:4, danger:0.7, title:'Kerosene and a Long Match', sound:'wood',
+  text:`Fuel down the hall, up the stairs, across the table, and a puddle of it around the book like something being basted. Whoever is left stands in the doorway with the rain at their backs. You have one working lighter and the wind has opinions about it.`,
+  choices:[
+    { label:'Strike it.', tone:'danger', sound:'wood', effect:{ noise:0.08 },
+      nextIf:[{ cond:{ has:['kerosene'] }, next:'c66' }], next:'c65' },
+    { label:'Feed the tapes into the hearth first.', tone:'danger', sound:'static', next:'c67' },
+    { label:'Get everyone out onto the lawn before you light anything.', tone:'safe',
+      sound:'breath', effect:{ sanity:4, set:{ gotThemOut:true } },
+      nextIf:[{ cond:{ has:['kerosene'] }, next:'c68' }], next:'c65' }
+  ]
+},
+{
+  id:'c65', act:4, danger:0.68, title:'No Fuel, Only Lamp Oil',
+  text:`There is no kerosene. There is a half-full oil lamp, a bottle of something Pike distilled in a shed, and a house built of ninety-year-old pine, which is its own accelerant if you are patient — and you are not. You break the lamp across the table. It goes up eagerly and very unevenly, and the smoke goes the wrong way, into the room instead of out of it.`,
+  choices:[
+    { label:'Push the book into the flames.', tone:'danger', sound:'wood',
+      effect:{ sanity:-6, noise:0.06 }, next:'c66' },
+    { label:'Get everyone out and let the house do the work.', tone:'safe',
+      effect:{ set:{ gotThemOut:true } }, next:'c68' },
+    { label:'Add the tapes.', tone:'danger', sound:'static', next:'c67' }
+  ]
+},
+{
+  id:'c66', act:4, danger:0.78, title:'It Will Not Take Flame',
+  text:`The fire takes the table, the chairs and most of the west wall, and goes around the book the way water goes around a stone. The pages do not char. The cover does not blister. The symbols on the front have rearranged themselves into an order you very nearly recognise, and Pike's margin note is suddenly legible in the firelight: <em>it burns when it is named.</em>`,
+  choices:[
+    { label:'Name it.', tone:'possess', sound:'growl',
+      effect:{ noise:0.1 },
+      effectIf:[
+        { cond:{ flags:{ knowsItsName:true } }, effect:{ set:{ ledgerBurned:true }, sanity:6 } },
+        { cond:{ flags:{ sealVerse:true } }, effect:{ set:{ ledgerBurned:true }, sanity:-6 } },
+        { cond:{}, effect:{ sanity:-14, noise:0.12 } }
+      ],
+      nextIf:[{ cond:{ flags:{ ledgerBurned:true } }, next:'c68' }], next:'c67' },
+    { label:'Give it your own name instead.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-16, noise:0.16, set:{ ledgerBurned:true, gaveName:true, youMarked:true } },
+      next:'c68' },
+    { label:'Take it with you and let the house burn without it.', tone:'danger', sound:'creak',
+      effect:{ sanity:-4, add:['the Ledger'], set:{ ledgerCarried:true } }, next:'c68' }
+  ]
+},
+{
+  id:'c67', act:4, danger:0.76, title:'The Tapes Go In First', sound:'static',
+  text:`They go in one at a time and each one screams a little in the heat, which is only plastic, which is what you keep telling the room. On the fourth, the fire changes colour to a green nobody has a name for, and Pike's voice comes out of the flames mid-sentence — still reading, still crying, eleven years too late for anybody to stop him.`,
+  choices:[
+    { label:'Put the book in on top of them.', tone:'danger', sound:'wood',
+      effect:{ noise:0.08, set:{ ledgerBurned:true } }, next:'c68' },
+    { label:'Stop. Pull the last reel back out of the fire.', tone:'safe',
+      effect:{ sanity:-6, add:['tape E'] }, next:'c68' },
+    { label:'Listen to what Pike is actually saying.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-14, noise:0.15, set:{ heardPikeBurn:true, sealVerse:true } }, next:'c68' }
+  ]
+},
+{
+  id:'c68', act:4, danger:0.82, title:'Ninety Years of Dry Pine',
+  text:`It goes up like it has been waiting the whole time for somebody to give it the excuse. The heat pushes you out onto the porch, and the porch is not where you left it. Behind you, inside the fire, somebody is walking around at a completely normal pace and appears to be in no distress whatsoever.`,
+  choices:[
+    { label:'The road. Do not look back at it.', tone:'danger', sound:'heartbeat',
+      effect:{ sanity:-6, set:{ cabinBurned:true } }, next:'c69' },
+    { label:'Count heads on the lawn.', tone:'danger', sound:'static',
+      effect:{ sanity:-8, noise:0.08, set:{ cabinBurned:true } }, next:'c69' },
+    { label:'Go back in for whoever is still tied to a chair.', tone:'possess', sound:'growl',
+      effect:{ sanity:-12, set:{ cabinBurned:true, wentBackIn:true } },
+      effectIf:[
+        { cond:{ aliveMax:1, anyHollow:true },
+          effect:{ kill:['@ALLHOLLOW','You'], set:{ burnedThem:true } } },
+        { cond:{ anyHollow:true },
+          effect:{ kill:['@ALLHOLLOW'], sanity:-10, set:{ burnedThem:true } } }
+      ],
+      nextIf:[{ cond:{ flags:{ youDead:true } }, next:'@ENDING' }], next:'c69' }
+  ]
+},
+{
+  id:'c69', act:4, danger:0.9, title:'The Treeline Leans In',
+  scare:{ art:'tree', silence:1100, delay:600 },
+  text:`The fire is finally bright enough to show you the treeline properly, and the treeline is nearer than a treeline is able to get. Every trunk has bent a few degrees toward the house. Between two of them, something the height of a second storey turns its head to watch the smoke climb, and it has faces set into it like tiles, and you know several of them.`,
+  choices:[
+    { label:'Run for the road.', tone:'danger', sound:'heartbeat',
+      effect:{ sanity:-10, noise:0.06 }, next:'c70' },
+    { label:'Stand still and let it look at you.', tone:'possess', sound:'growl',
+      effect:{ sanity:-16, noise:0.14, set:{ youMarked:true } },
+      effectIf:[{ cond:{ sanityMax:20 }, effect:{ kill:['You'] } }],
+      nextIf:[{ cond:{ flags:{ youDead:true } }, next:'@ENDING' }], next:'c70' },
+    { label:'Walk. Do not run. Take everybody with you.', tone:'safe', sound:'breath',
+      effect:{ sanity:-4, set:{ walkedOut:true } }, next:'c70' }
+  ]
+},
+{
+  id:'c70', act:4, danger:0.5, title:'The Road, Behind You',
+  text:`The road is exactly where you left it, which is the first promise anything has kept all night. Behind you the cabin is a bright orange thumbprint on the underside of the cloud, and the counting has stopped. {n} of you walk down the centre line in the rain, and nobody suggests going back for the car.`,
+  choices:[
+    { label:'Keep walking until the sun is properly up.', tone:'safe', sound:'breath',
+      effect:{ sanity:8 }, next:'@ENDING' },
+    { label:'Wait for the fire crews and tell them the whole truth.', tone:'safe',
+      effect:{ sanity:4, set:{ toldTruth:true } }, next:'@ENDING' },
+    { label:'Go back for whoever you left behind.', tone:'danger', sound:'heartbeat',
+      effect:{ sanity:-8 },
+      nextIf:[{ cond:{ anyHollow:true }, next:'c89' }], next:'c90' }
+  ]
+},
+
+/* ---- SEAL ---- */
+{
+  id:'c71', act:4, danger:0.6, title:'Pike’s Circle, Redrawn', sound:'drip',
+  text:`You clear the long room down to bare boards and redraw Pike's circle nine times over the top of itself, the way he did, chalk worn down to the quick of your fingers. The gap goes on the north side, because north is where the well is. When you finish, the air inside the line is measurably colder than the air outside it.`,
+  choices:[
+    { label:'Iron next.', tone:'safe', sound:'wood',
+      effect:{ set:{ circleDrawn:true } },
+      effectIf:[{ cond:{ lacks:['chalk'] }, effect:{ sanity:-6, set:{ circleRough:true } } }],
+      next:'c73' },
+    { label:'Words first. Get the verse right before anything else.', tone:'safe',
+      effect:{ set:{ circleDrawn:true } }, next:'c72' },
+    { label:'Close the gap now, before anything can walk into it.', tone:'danger',
+      sound:'static', effect:{ sanity:-8, noise:0.1, set:{ circleDrawn:true, gapClosed:true } },
+      next:'c73' }
+  ]
+},
+{
+  id:'c72', act:4, danger:0.58, title:'One Voice, No Stopping',
+  text:`Thirteen lines, one voice, no pauses, no breath in the wrong place. You practise it under your breath and the room objects: the fire lies flat, the chalk darkens, and something upstairs starts moving furniture in what is unmistakably a hurry. It is not confident. That is brand-new information and it is worth more to you than the salt is.`,
+  choices:[
+    { label:'Practise until you can say it without looking at the page.', tone:'safe',
+      sound:'breath',
+      effectIf:[
+        { cond:{ flags:{ sealVerse:true } },
+          effect:{ sanity:8, set:{ versePractised:true } } },
+        { cond:{}, effect:{ sanity:-6, set:{ versePractised:true, sealVerse:true,
+          verseIncomplete:true } } }
+      ],
+      next:'c73' },
+    { label:'Let somebody else say it. Your voice is finished.', tone:'safe',
+      effect:{ sanity:2, set:{ otherVoice:true, sealVerse:true } },
+      nextIf:[{ cond:{ aliveMax:1 }, next:'c73' }], next:'c73' },
+    { label:'Say it once now, quietly, just to test the shape of it.', tone:'possess',
+      sound:'whisper', effect:{ sanity:-12, noise:0.14, set:{ sealVerse:true } }, next:'c73' }
+  ]
+},
+{
+  id:'c73', act:4, danger:0.64, title:'Iron at Four Points', sound:'wood',
+  text:`North, south, east, west: a nail driven through the floorboard at each cardinal point, and the noise of the hammer fills the whole house like an announcement being made. On the fourth nail the walls flex — genuinely flex, in and out, twice — and then the house is a house again, and considerably smaller on the inside than it was a minute ago.`,
+  choices:[
+    { label:'Salt every mouth of the room.', tone:'safe', sound:'drip',
+      effect:{ set:{ ironDown:true } },
+      effectIf:[{ cond:{ lacks:['rock salt'] },
+        effect:{ sanity:-8, set:{ saltMissing:true } } }],
+      next:'c74' },
+    { label:'Skip the salt. There is no time left for the salt.', tone:'danger',
+      effect:{ sanity:-4, noise:0.08, set:{ ironDown:true, saltMissing:true } }, next:'c74' },
+    { label:'Nail the doors shut as well.', tone:'safe', sound:'wood',
+      effect:{ sanity:2, set:{ ironDown:true, doorsNailed:true } },
+      effectIf:[{ cond:{ not:{ hasAny:['iron nails','bent nail'] } },
+        effect:{ sanity:-10, set:{ ironShort:true } } }],
+      next:'c74' }
+  ]
+},
+{
+  id:'c74', act:4, danger:0.68, title:'A Vessel That Agrees',
+  text:`The last item on Pike's list is the one he wrote smallest, at the very bottom, in handwriting that had started to come apart. It needs somewhere to go. It will only go somewhere that says yes. The circle is drawn, the iron is down, the words are ready — and now the room has to work out which of you is going to be the smaller room.`,
+  choices:[
+    { label:'Ask. Out loud. Let somebody answer.', tone:'safe', sound:'breath',
+      nextIf:[{ cond:{ aliveMin:2 }, next:'c75' }], next:'c76' },
+    { label:'Volunteer.', tone:'possess', sound:'heartbeat', next:'c76' },
+    { label:'Put the one who is already taken inside the circle.', tone:'danger', sound:'wood',
+      nextIf:[{ cond:{ anyHollow:true }, next:'c77' }], next:'c76' }
+  ]
+},
+{
+  id:'c75', act:4, danger:0.6, title:'Somebody Steps Over the Line',
+  text:`{friend} steps over the chalk before anybody has finished the sentence, and stands in the middle with their hands open, and says the thing people say when the deciding is already done. Nobody argues with them, which is the cruellest part of the whole night. They ask you to say their name at the end, so that they can hear it while there is still somebody in there to hear it.`,
+  choices:[
+    { label:'Say the verse.', tone:'possess', sound:'chime',
+      effect:{ sanity:-14, set:{ vesselFriend:true } }, next:'c78' },
+    { label:'Take their place.', tone:'possess', sound:'heartbeat',
+      effect:{ sanity:4 }, next:'c76' },
+    { label:'Refuse. Nobody goes in the circle.', tone:'safe',
+      effect:{ sanity:-6, set:{ refusedVessel:true } }, next:'c79' }
+  ]
+},
+{
+  id:'c76', act:4, danger:0.66, title:'You Step Over the Line',
+  text:`You step over it yourself, which is either courage or simply the shortest available route to not having to watch anybody else do it. The circle is warmer than the room. Somebody outside the chalk is crying and trying very hard to hide that, and somebody else has already started the first line, because they know you will change your mind if they give you the time.`,
+  choices:[
+    { label:'Hold still. Let them finish it.', tone:'possess', sound:'chime',
+      effect:{ sanity:-10, set:{ vesselYou:true } }, next:'c78' },
+    { label:'Step back out. You cannot do this.', tone:'danger', sound:'static',
+      effect:{ sanity:-10, noise:0.1, set:{ refusedVessel:true } }, next:'c79' },
+    { label:'Tell them to say your name at the end.', tone:'possess', sound:'breath',
+      effect:{ sanity:4, set:{ vesselYou:true, nameAtEnd:true } }, next:'c78' }
+  ]
+},
+{
+  id:'c77', act:4, danger:0.74, title:'The One Already Taken',
+  text:`You put {hollow} in the circle and there is no resistance at all, which frightens everybody considerably more than resistance would have. It stands where you left it, considers the chalk at its feet, and then smiles — the wide wrong one, carrying on well past where a face is supposed to end — because it has recognised the shape of the room you are building and is not impressed by the dimensions.`,
+  choices:[
+    { label:'Say the verse anyway.', tone:'possess', sound:'chime',
+      effect:{ sanity:-8, set:{ vesselHollow:true } }, next:'c78' },
+    { label:'Close the gap first. Then say it.', tone:'safe', sound:'wood',
+      effect:{ sanity:3, set:{ vesselHollow:true, gapClosed:true } }, next:'c78' },
+    { label:'Change your mind. Step in yourself instead.', tone:'possess', sound:'heartbeat',
+      next:'c76' }
+  ]
+},
+{
+  id:'c78', act:4, danger:0.7, title:'The Room Gets Smaller', sound:'chime',
+  text:`Thirteen lines, one voice, no stopping — and the room goes down to the size of a coffin, and then to the size of a jar. The chalk lifts off the boards in one continuous sheet and folds inward on itself. The pressure in your ears is the pressure of something very large being told <em>no</em> for the first time in a long, long while.`,
+  choices:[
+    { label:'Say the name at the end, the way they asked.', tone:'safe', sound:'breath',
+      effect:{ sanity:6, set:{ ledgerSealed:true } }, next:'c79' },
+    { label:'Say nothing. Let it close in silence.', tone:'safe',
+      effect:{ sanity:-4, set:{ ledgerSealed:true, silentClose:true } }, next:'c79' },
+    { label:'Look inside the jar before it shuts.', tone:'possess', sound:'growl',
+      effect:{ sanity:-18, noise:0.16, set:{ ledgerSealed:true, lookedIn:true } }, next:'c79' }
+  ]
+},
+{
+  id:'c79', act:4, danger:0.44, title:'Sealed Is Not Gone',
+  text:`It is sealed, and sealed is not the same word as gone. Something has to stay in the house with it — Pike stayed thirty-one nights and then went down the well, and you understand the well much better now than you would like to. The book is cold for the first time since you found it. Over the ridge, the sky has turned the colour of a bruise going yellow.`,
+  choices:[
+    { label:'Somebody stays. Not you.', tone:'danger', sound:'breath',
+      effect:{ sanity:-12, set:{ wardenStays:true, wardenOther:true } },
+      nextIf:[{ cond:{ aliveMin:2 }, next:'c80' }], next:'c80' },
+    { label:'You stay. Send the rest of them down the road.', tone:'possess', sound:'chime',
+      effect:{ sanity:-6, set:{ wardenStays:true, wardenYou:true } }, next:'c80' },
+    { label:'Nobody stays. Take the book with you and go.', tone:'danger', sound:'creak',
+      effect:{ sanity:-8, noise:0.1, add:['the Ledger'], set:{ ledgerCarried:true } }, next:'c80' }
+  ]
+},
+{
+  id:'c80', act:4, danger:0.3, title:'A Sound Like a Latch',
+  text:`The last thing is a sound like a latch, very small, somewhere underneath the floor. Then the wind is only wind and the rain is only rain, and the counting under the boards stops in the middle of a number, which is the detail that will bother you for years. Whoever is left is still breathing. Whatever is left of the night is just night.`,
+  choices:[
+    { label:'Walk out.', tone:'safe', sound:'breath', effect:{ sanity:10 }, next:'@ENDING' },
+    { label:'Record a tape first, for whoever comes here next.', tone:'safe', sound:'static',
+      effect:{ sanity:6, set:{ recordedTape:true } }, next:'@ENDING' },
+    { label:'Burn the cabin down behind you anyway.', tone:'danger', sound:'wood',
+      effect:{ sanity:-4, set:{ cabinBurned:true } }, next:'@ENDING' }
+  ]
+},
+
+/* ---- HOST ---- */
+{
+  id:'c81', act:4, danger:0.86, title:'The Invitation', sound:'whisper',
+  text:`You lay the book flat on the boards and open it to the marked page, and the house stops making any noise at all. It is a courtesy. Whatever is in the walls has been waiting the entire night for somebody to be reasonable about this, and it appreciates the gesture enough to be gentle with you about what comes next.`,
+  choices:[
+    { label:'Read the passage forwards. All of it.', tone:'possess', sound:'growl',
+      effect:{ sanity:-10, noise:0.1, set:{ youMarked:true } }, next:'c82' },
+    { label:'Ask what it will cost.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-6 }, next:'c82' },
+    { label:'Close the book. You cannot do this.', tone:'safe', sound:'wood',
+      effect:{ sanity:2 }, next:'c85' }
+  ]
+},
+{
+  id:'c82', act:4, danger:0.88, title:'Your Whole Name',
+  text:`It says your name. The whole thing — including the part only one person ever used, including the part you have never told anybody because it is not a word. Then it offers terms, and the terms are simple: one room, one tenant, and everybody else walks down the road at first light with their joints the right way round. It does not lie. It has never had any reason to.`,
+  choices:[
+    { label:'Accept the terms.', tone:'possess', sound:'growl',
+      effect:{ sanity:-12, noise:0.12 }, next:'c83' },
+    { label:'Ask for proof that it will really let them go.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-8 }, next:'c84' },
+    { label:'Refuse.', tone:'danger', sound:'static',
+      effect:{ sanity:-6, noise:0.1 }, next:'c85' }
+  ]
+},
+{
+  id:'c83', act:4, danger:0.95, title:'The Ledger Writes You In',
+  scare:{ art:'face', silence:1150, delay:560 },
+  text:`The symbols on the cover move aside, and underneath, in your own handwriting, is your name — written in the past tense. Below it, thirty-one other names, every one crossed out, and Pike's last of all, uncrossed and underlined twice, as though he got out of a thing that nobody gets out of. Something puts a hand inside your chest without opening it first.`,
+  choices:[
+    { label:'Let it in.', tone:'possess', sound:'growl',
+      effect:{ sanity:-14 }, next:'c86' },
+    { label:'Read Pike’s name aloud.', tone:'danger', sound:'chime',
+      nextIf:[{ cond:{ flags:{ sealVerse:true } }, next:'c87' }], next:'c86' },
+    { label:'Tear out the page with your name on it.', tone:'danger', sound:'wood',
+      effect:{ sanity:-16, noise:0.14, add:['torn page'] }, next:'c85' }
+  ]
+},
+{
+  id:'c84', act:4, danger:0.9, title:'From Here They Look Small',
+  text:`From wherever you are standing now, the others look a long way off and very small, like people at the far end of a corridor that has been quietly lengthening for four hours. You can see the shape of their whole lives from here, start to finish, all at once. It is very ordinary and extremely brief, and you discover that you want them to have every bit of it.`,
+  choices:[
+    { label:'Take the terms. Let them go.', tone:'possess', sound:'chime',
+      effect:{ sanity:-8, set:{ tookTerms:true } }, next:'c86' },
+    { label:'Take the terms and lie to them about what it cost.', tone:'possess', sound:'whisper',
+      effect:{ sanity:-12, set:{ tookTerms:true, liedAboutIt:true } }, next:'c86' },
+    { label:'Refuse, and take your chances with the sunrise.', tone:'danger', sound:'static',
+      effect:{ sanity:-10, noise:0.1 }, next:'c85' }
+  ]
+},
+{
+  id:'c85', act:4, danger:0.72, title:'The Last Second',
+  text:`You close the book on your own hand hard enough to break something in it, and the room comes back all at once — cold, loud, full of rain noise and somebody shouting your name from the stairs. Whatever was inside your chest withdraws with the unhurried patience of a creditor. It will be back. It has an address now, and the address is you.`,
+  choices:[
+    { label:'Get everyone to the road before the light.', tone:'safe', sound:'heartbeat',
+      effect:{ sanity:4 }, next:'c90' },
+    { label:'Deal with whoever is still in the chairs first.', tone:'danger', sound:'breath',
+      nextIf:[{ cond:{ anyHollow:true }, next:'c89' }], next:'c90' },
+    { label:'Burn all of it instead.', tone:'danger', sound:'wood',
+      effect:{ set:{ choseBurn:true } }, next:'c64' }
+  ]
+},
+{
+  id:'c86', act:4, danger:1, title:'Yes', sound:'growl',
+  text:`You say yes, and the word is the last thing that belongs entirely to you. It is not painful. It is like being read — thoroughly, page by page, by something that is taking notes — and then, after a while, it is like being the notes. Somewhere below you a door is opening for four people, because you asked for it nicely.`,
+  choices:[
+    { label:'Watch them go.', tone:'possess', sound:'chime',
+      effect:{ hollow:['You'] }, next:'@ENDING' },
+    { label:'Say their names one last time while you still can.', tone:'possess', sound:'breath',
+      effect:{ hollow:['You'], set:{ namedThemLast:true } }, next:'@ENDING' },
+    { label:'Follow them as far as the gate.', tone:'possess', sound:'whisper',
+      effect:{ hollow:['You'], set:{ followedThem:true } }, next:'@ENDING' }
+  ]
+},
+{
+  id:'c87', act:4, danger:0.84, title:'Halloran Pike', sound:'chime',
+  text:`You say <em>Halloran Pike</em> and the room flinches. The name is a splinter in it: he promised something and then broke the promise in a way that has evidently never been forgiven, and hearing it reminds the thing that it can be cheated. The offer is withdrawn. The gentleness stops. Whatever happens in the next two hours will not be a negotiation.`,
+  choices:[
+    { label:'Run for the road while it is off balance.', tone:'danger', sound:'heartbeat',
+      effect:{ sanity:-6, noise:0.08 }, next:'c90' },
+    { label:'Seal it now, while it is angry and unsteady.', tone:'safe', sound:'wood',
+      effect:{ sanity:4, set:{ choseSeal:true } }, next:'c71' },
+    { label:'Burn it now.', tone:'danger', sound:'wood',
+      effect:{ set:{ choseBurn:true } }, next:'c64' }
+  ]
+},
+
+/* ---- sanity collapse (engine routes here when sanity hits zero) ---- */
+{
+  id:'c88', act:4, danger:0.95, title:'Twenty Hours Awake',
+  scare:{ art:'eyes', silence:1200, delay:500 },
+  text:`You have been awake for twenty hours and something has been standing behind you for six of them. The edges of the room go soft, the sound goes down a well, and for a while you are genuinely not certain which of the people in this house you are. When you come back, there is chalk on your hands and thirteen lines written on the wall in handwriting that is very nearly yours.`,
+  choices:[
+    { label:'Get up. Get water. Get a grip.', tone:'safe', sound:'breath',
+      effect:{ sanity:34, noise:-0.1 }, next:'c63' },
+    { label:'Read what you wrote on the wall.', tone:'possess', sound:'whisper',
+      effect:{ sanity:14, set:{ youMarked:true, sealVerse:true } }, next:'c81' },
+    { label:'Stop fighting it. It is so much easier.', tone:'possess', sound:'growl',
+      effect:{ sanity:18, set:{ youMarked:true, choseHost:true } }, next:'c81' }
+  ]
+},
+
+/* ---- shared walk-out ---- */
+{
+  id:'c89', act:4, danger:0.8, title:'The Last Kindness',
+  text:`There are two doors left in this house and both of them are people you love. What is in the chairs still uses their voices to ask you for things — water, mostly, and to be untied, and once, very quietly, to be finished. You have a blade, or you have your hands. The light is forty minutes out and it is not going to arrive early on your behalf.`,
+  choices:[
+    { label:'Do it. Quickly. Say their names while you do it.', tone:'possess', sound:'wood',
+      effect:{ kill:['@ALLHOLLOW'], sanity:-26, set:{ mercyDone:true } }, next:'c90' },
+    { label:'Wait for the sun. It might be enough.', tone:'safe', sound:'breath',
+      effect:{ sanity:-8, set:{ waitedForSun:true } }, next:'c90' },
+    { label:'Untie them.', tone:'danger', sound:'growl',
+      effect:{ sanity:-14, noise:0.12, set:{ untied:true } },
+      effectIf:[
+        { cond:{ aliveMin:2 }, effect:{ kill:['@NEXT'], sanity:-10 } },
+        { cond:{}, effect:{ kill:['You'] } }
+      ],
+      nextIf:[{ cond:{ flags:{ youDead:true } }, next:'@ENDING' }], next:'c90' }
+  ]
+},
+{
+  id:'c90', act:4, danger:0.3, title:'The Road at Dawn', sound:'breath',
+  text:`The sky goes from black to the grey of dishwater, and everything in the woods stops at the same moment, as though a hand has been lifted off it. It is four miles of wet tarmac to a phone box that may or may not exist. Whoever is left walks it with you. Nobody talks, and every one of you keeps quietly checking that everybody is still casting a shadow.`,
+  choices:[
+    { label:'Keep walking. Do not look at the trees.', tone:'safe',
+      effect:{ sanity:8 }, next:'c91' },
+    { label:'Check every shadow one more time.', tone:'danger', sound:'static',
+      effect:{ sanity:-6, noise:0.06 }, next:'c91' },
+    { label:'Go back for the car at mile marker thirteen.', tone:'safe', sound:'wood',
+      next:'c91' }
+  ]
+},
+{
+  id:'c91', act:4, danger:0.26, title:'Mile Marker Thirteen, Again',
+  text:`The car is exactly where you left it, nose down in the ditch, hazards still going after nine hours because of course they are. Somebody has laid thirteen bent nails out on the bonnet in a neat row, points turned inward. The engine starts first time. It has never once started first time.`,
+  choices:[
+    { label:'Drive.', tone:'safe', sound:'wood', effect:{ sanity:6 }, next:'@ENDING' },
+    { label:'Sweep the nails off the bonnet, then drive.', tone:'safe', sound:'drip',
+      effect:{ sanity:2, set:{ sweptNails:true } }, next:'@ENDING' },
+    { label:'Put the book in the boot and drive.', tone:'danger', sound:'creak',
+      effect:{ sanity:-6, noise:0.1, add:['the Ledger'], set:{ ledgerCarried:true } },
+      next:'@ENDING' }
+  ]
+}
+);
+
+/* ─────────── ENDINGS (e1–e9) ───────────
+   Reached by routing a choice to '@ENDING'; ENDING_RULES up in the engine
+   picks which one the accumulated flags have earned.                      */
+CHAPTERS.push(
+{
+  id:'e1', act:5, danger:0.12, ending:'Survive & Escape', sound:'chime',
+  title:'Four Miles of Wet Tarmac',
+  text:`You get out. Four miles of road, a phone box that does turn out to exist, and a trooper who writes down the words <em>gas leak</em> before you have finished your first sentence. {alive} sit in the back of an ambulance with foil blankets and terrible coffee and absolutely nothing to say to one another. Nine years on, none of you have ever discussed it, and every one of you still counts heads in rooms.`,
+  choices:[
+    { label:'Begin again at mile marker thirteen.', tone:'safe', restart:true, next:'c1' },
+    { label:'Go back to the last fork before dawn.', tone:'safe', next:'c63' },
+    { label:'Sit in the dark a while longer.', tone:'safe', next:'e1' }
+  ]
+},
+{
+  id:'e2', act:5, danger:1, ending:'Become the New Host',
+  scare:{ art:'face', silence:1400, delay:900 },
+  title:'A Great Deal of Room',
+  text:`There is no pain, and there is no dark. There is only a very great deal of room. You can feel the whole ridge at once — every trunk, every mouse, the ledger and its long arrears — and four small warm things going down the road at a pace that makes you unexpectedly fond of them. In eleven years somebody will find the tapes. You will be extremely glad of the company.`,
+  choices:[
+    { label:'Begin again at mile marker thirteen.', tone:'safe', restart:true, next:'c1' },
+    { label:'Go back to the last fork before dawn.', tone:'safe', next:'c63' },
+    { label:'Stay. It is warm here.', tone:'possess', next:'e2' }
+  ]
+},
+{
+  id:'e3', act:5, danger:0.4, ending:'Burn It All Down', sound:'chime',
+  title:'An Orange Thumbprint',
+  text:`The cabin burns for six hours. The crews find no book, no bodies, and thirty-one sets of teeth in labelled jars, which will occupy a coroner for the rest of his career. Whatever was in those walls went up with them, screaming in a register that cracked two windscreens in the lay-by. Whoever is left walks out. It cost what it cost, and the woods, for the first time in a century, are only woods.`,
+  choices:[
+    { label:'Begin again at mile marker thirteen.', tone:'safe', restart:true, next:'c1' },
+    { label:'Go back to the last fork before dawn.', tone:'safe', next:'c63' },
+    { label:'Watch it burn a while longer.', tone:'safe', next:'e3' }
+  ]
+},
+{
+  id:'e4', act:5, danger:1, ending:'Everyone Dies',
+  scare:{ art:'maw', silence:1400, delay:850 },
+  title:'The Account, Settled',
+  text:`The sun comes up on a house with its front door standing open and five wet coats on five hooks. The counting under the floorboards has finally reached its number and gone quiet, satisfied, the way anything goes quiet when a long account is settled at last. Somebody will find the car at mile marker thirteen with the hazards still going. Nobody is going to find you.`,
+  choices:[
+    { label:'Begin again at mile marker thirteen.', tone:'safe', restart:true, next:'c1' },
+    { label:'Go back to the last fork before dawn.', tone:'safe', next:'c63' },
+    { label:'Lie still.', tone:'possess', next:'e4' }
+  ]
+},
+{
+  id:'e5', act:5, danger:0.2, ending:'The Reseal', sound:'chime',
+  title:'A Jar the Size of a Room',
+  text:`It is in a jar the size of a room, under a floor, in a house that nobody owns, and it will stay there for exactly as long as somebody keeps the iron sounding and the salt dry. That somebody has a mattress in the attic, thirty-one nights ahead of them, and then thirty-one more after that. The rest go down the road at first light. The warden waves, and then stops waving, and goes back inside.`,
+  choices:[
+    { label:'Begin again at mile marker thirteen.', tone:'safe', restart:true, next:'c1' },
+    { label:'Go back to the last fork before dawn.', tone:'safe', next:'c63' },
+    { label:'Start the first of the thirty-one nights.', tone:'safe', next:'e5' }
+  ]
+},
+{
+  id:'e6', act:5, danger:0.7, ending:'Dawn Chorus', sound:'whisper',
+  title:'It Has Simply Been Given a Lift',
+  text:`You drive out at dawn with the heater roaring and the book on the back seat, and for eleven miles it is the finest morning of your life. Then, somewhere around the county line, the radio finds a station that is only somebody breathing, and the book is warm again, and in the rear-view mirror your reflection is running about half a second behind you. It is not over. It has simply been given a lift.`,
+  choices:[
+    { label:'Begin again at mile marker thirteen.', tone:'safe', restart:true, next:'c1' },
+    { label:'Go back to the last fork before dawn.', tone:'safe', next:'c63' },
+    { label:'Keep driving.', tone:'danger', next:'e6' }
+  ]
+},
+{
+  id:'e7', act:5, danger:0.3, ending:'The Last Kindness', sound:'chime',
+  title:'The Kindest Thing Available',
+  text:`You walk out into a morning that has no opinion whatsoever about any of it. What you did in the last forty minutes of the dark was the kindest thing available to you, and it was still the worst thing you will ever do, and both of those will go on being true for the rest of your life. You bury nothing and you tell nobody. Every so often, in a crowded room, you count heads and get one too many.`,
+  choices:[
+    { label:'Begin again at mile marker thirteen.', tone:'safe', restart:true, next:'c1' },
+    { label:'Go back to the last fork before dawn.', tone:'safe', next:'c63' },
+    { label:'Stand in the road a while.', tone:'safe', next:'e7' }
+  ]
+},
+{
+  id:'e8', act:5, danger:0.35, ending:'Tape Six', sound:'static',
+  title:'Somebody Always Comes Here',
+  text:`You find Pike's recorder, wind a fresh reel onto it, and talk for forty minutes: what it is, what holds it, what it costs, and the four things on the list. You label the reel <em>F</em> and put it in the crate with the others, because somebody will come here — somebody always comes here. Eleven years is nothing much to a forest. It is plenty of time for a tape to be found by five people whose car has died at mile marker thirteen.`,
+  choices:[
+    { label:'Begin again at mile marker thirteen.', tone:'safe', restart:true, next:'c1' },
+    { label:'Go back to the last fork before dawn.', tone:'safe', next:'c63' },
+    { label:'Press record one more time.', tone:'safe', next:'e8' }
+  ]
+},
+{
+  id:'e9', act:5, danger:0.55, ending:'The Salt Circle', sound:'breath',
+  title:'What the Forest Is Owed',
+  text:`The sun comes up, the circle holds, and you are alive inside it, which is what you asked for and a good deal less than you wanted. {hollowed} stand outside the chalk until the first real light and then simply walk into the trees, unhurried, without once looking back — taken, not dead, which is worse and is going to stay worse. The forest keeps what it is owed. You go home and leave a light on in every room for the rest of your life.`,
+  choices:[
+    { label:'Begin again at mile marker thirteen.', tone:'safe', restart:true, next:'c1' },
+    { label:'Go back to the last fork before dawn.', tone:'safe', next:'c63' },
+    { label:'Wait inside the circle.', tone:'safe', next:'e9' }
+  ]
+}
+);
+</script>
+<script>boot();</script>
